@@ -60,7 +60,7 @@ Each recipe should have:
 "The `tracking` form" not "the Tracking form" (use backticks, lowercase)
 
 ### Describing calculations
-Include the full `@CALCTEXT()` or `@CALCDATE()` syntax in code blocks or inline with backticks
+Include the full `@CALCTEXT()` or `@CALCDATE()` syntax in code blocks or inline with backticks. You should be able to paste the calculation where it goes and have it work.
 
 ### File naming
 - Recipe directories: `snake_case` (e.g., `stopping_alerts_asis/`)
@@ -77,7 +77,6 @@ Include the full `@CALCTEXT()` or `@CALCDATE()` syntax in code blocks or inline 
 ## Grammar and Style
 
 - Use contractions sparingly
-- Write in active voice
+- Write in active voice; you are writing a list of steps for someone to follow
 - Use sentence case for headings
-- Prefer "participant" over "subject" when possible, but either is acceptable
-- Use em dashes without spaces—like this
+- Prefer "participant" over "subject"

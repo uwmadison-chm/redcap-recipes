@@ -11,10 +11,10 @@ REDCap is a web application and database, mainly for running for research studie
 
 ## What you'll find here
 
-This site contains **recipes** - focused, practical guides that address specific REDCap challenges. Each recipe presents a problem and should tell you what you need to solve it. In some cases, recipes may contain XML files with example study implementations.
+This site contains **recipes** — focused, practical guides that address specific REDCap challenges. Each recipe presents a problem and offers steps to solve it. In some cases, recipes may contain XML files with example study implementations.
 
 ::: aside
-This guide is not, however, intended as a general guide to running studies in REDCap.
+This guide is _not,_ however, a general guide to running studies in REDCap.
 :::
 
 You should expect to adapt these recipes to your own studies. Your field names will likely not match the ones in the recipes, and that's okay.

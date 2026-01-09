@@ -1,5 +1,7 @@
 project:
   type: website
+  render:
+    - "!STYLE_GUIDE.md"
 
 website:
   title: "REDCap Recipes"
