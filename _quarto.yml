@@ -1,7 +1,9 @@
 project:
   type: website
   render:
-    - "!STYLE_GUIDE.md"
+    - "*.qmd"
+    - "recipes/*.qmd"
+    - "recipes/**/*.qmd"
 
 website:
   title: "REDCap Recipes"
