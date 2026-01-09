@@ -1,0 +1,34 @@
+---
+title: "REDCap Recipes"
+subtitle: "Practical designs for REDCap projects"
+---
+
+## Welcome
+
+Welcome to REDCap Recipes, a collection of practical guides and solutions for working with [REDCap](https://www.project-redcap.org/) (Research Electronic Data Capture).
+
+REDCap is a web application and database, mainly for running for research studies. It is extremely powerful. It is _not,_ however, simple to use and understand; study builders will find many similar-looking paths to do what they need to achieve goals. Those paths may ultimately lead to surprise pitfalls. This guide aims to give you a set of maps to let you avoid the worst time sinks.
+
+## What you'll find here
+
+This site contains **recipes** - focused, practical guides that address specific REDCap challenges. Each recipe presents a problem and should tell you what you need to solve it. In some cases, recipes may contain XML files with example study implementations.
+
+::: aside
+This guide is not, however, intended as a general guide to running studies in REDCap.
+:::
+
+You should expect to adapt these recipes to your own studies. Your field names will likely not match the ones in the recipes, and that's okay.
+
+## About 
+
+This guide was developed using a REDCap system at the University of Wisconsin-Madison, administered by the School of Medicine and Public Health. The authors are not REDCap admins; our knowledge of REDCap's inner workings and implementation is limited to what is publicly available.
+
+At the time of writing, the REDCap system we are using is version 15.6.1. It is mainly a stock installation; few (if any) guides here will rely on external modules. No guides will require system admin rights on your REDCap system.
+
+You will need to have **Project Setup and Design** rights to your project. Some recipes will require other rights (**Alerts & Notifications**, **Data Import**, and so on.) We'll assume you already have necessary rights. Some recipes will only be practical for some studies through the use of the API, though the Data Import Tool will almost always be an alternative.
+
+This guide was written by Nate Vack and (hopefully!) Stuti Shrivistava at the Center for Healthy Minds at the University of Wisconsin-Madison.
+
+## Contributing
+
+Have a recipe to share? Found an error? Contributions are welcome! Visit our [GitHub repository](https://github.com/centerforhealthyminds/redcap-recipes) to contribute or report issues.

@@ -1,0 +1,27 @@
+---
+title: "Recipes"
+subtitle: "Practical solutions for REDCap challenges"
+listing:
+  contents: "*/index.qmd"
+  type: grid
+  categories: true
+  sort: "date desc"
+  fields: [title, description, date, categories]
+---
+
+Click on a category badge to filter recipes by that category.
+
+## Request a Recipe
+
+Have a specific REDCap challenge you'd like to see addressed? [Open an issue](https://github.com/centerforhealthyminds/redcap-recipes/issues) on our GitHub repository with your request.
+
+## Contributing
+
+We welcome contributions! If you have a recipe to share:
+
+1. Fork the repository
+2. Create a new `.qmd` file in the `recipes/` directory
+3. Follow the structure shown in existing recipes
+4. Submit a pull request
+
+See our [GitHub repository](https://github.com/centerforhealthyminds/redcap-recipes) for more details.

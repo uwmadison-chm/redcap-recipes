@@ -1,0 +1,53 @@
+project:
+  type: website
+
+website:
+  title: "REDCap Recipes"
+  description: "Practical guides for implementing specific REDCap features and workflows while avoiding pitfalls"
+
+  site-url: https://centerforhealthyminds.github.io/redcap-recipes
+  repo-url: https://github.com/centerforhealthyminds/redcap-recipes
+  repo-actions: [edit, issue]
+
+  navbar:
+    background: light
+    search: true
+    right:
+      - icon: github
+        href: https://github.com/centerforhealthyminds/redcap-recipes
+
+  sidebar:
+    style: "docked"
+    background: light
+    contents:
+      - text: "Home"
+        href: index.qmd
+      - section: "Recipes"
+        contents:
+          - recipes/index.qmd
+          - auto: "recipes/*/index.qmd"
+
+  page-footer:
+    left: |
+      [License](LICENSE)
+    center: |
+      Center for Healthy Minds
+      University of Wisconsin-Madison
+    right: |
+      [GitHub](https://github.com/centerforhealthyminds/redcap-recipes)
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    css: assets/css/custom.css
+    toc: true
+    toc-depth: 2
+    toc-location: right
+    code-copy: true
+    code-line-numbers: true
+    code-fold: false
+    smooth-scroll: true
+
+lang: en

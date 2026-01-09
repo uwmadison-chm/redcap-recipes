@@ -1,0 +1,34 @@
+---
+title: "Stopping Alerts and ASIs"
+description: "How to stop sending participant-directed Alerts and ASIs when, for example, a subject withdraws"
+categories: [alert, asi, communication]
+---
+
+## Overview
+
+**Problem:** A subject withdraws from a longitudinal study and wants you to stop sending them emails. You have a ton of Alerts and Automated Survey Invitations. Adding `and [no_contact] = '0'` to all of them would be time-consuming and error-prone.
+
+**Solution:** Create a calculated email field that's cleared when a participant is set to withdrawn, and designate it as the project's email field.
+
+## Prerequisites
+
+* A study with an email address for the participant. In this recipe, it's `email`
+* A staff-side tracking form with a field indicating that the participant should not be contacted further. In this recipe, it's `no_contact`, a Yes/No on the `tracking` form.
+* At least one ASI or Alert
+
+## Steps
+
+1. Add a field to your `tracking` form. Required settings:
+    * Field Type: Text Box
+    * Validation: email
+    * Variable Name: `current_email`
+    * Action Tags: `@CALCTEXT(if([no_contact] = '1', '', [email]))`
+1. If you have existing data, re-calculate the field
+1. In **Project Setup** > **Designate an email field for communications**, use `current_email`
+1. If desired, add `@HIDDEN` to the `current_email` field.
+
+## Notes
+
+This relies on calculated fields being updated whenever their referenced fields change, even across forms that have never been saved. You can verify in Data Export that `current_email` gets calculated as soon as `email` has a value, before the `tracking` form is ever saved.
+
+In **Survey Distribution Tools** you may get a warning like "The designated email field does not exist on the first survey." Don't worry about it — `current_email` will get a value as soon as `email` does.

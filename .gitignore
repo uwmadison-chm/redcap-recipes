@@ -1,0 +1,45 @@
+# Quarto build outputs
+_site/
+docs/
+_quarto-cache/
+.quarto/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Node modules (if using npm packages)
+node_modules/
+
+/.quarto/
+**/*.quarto_ipynb
