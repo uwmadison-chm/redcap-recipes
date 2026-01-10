@@ -2,16 +2,9 @@
 
 Practical guides and recipes for working with REDCap (Research Electronic Data Capture).
 
-🌐 **Live Site:** https://centerforhealthyminds.github.io/redcap-recipes/
-
 ## About
 
-This site is a collection of practical, tested solutions to common REDCap challenges. Each recipe provides:
-
-- Clear problem statements
-- Step-by-step solutions
-- Working code examples
-- Troubleshooting tips
+This site is a collection of solutions to REDCap challenges that we've found over the years. It's not a general REDCap guide. The book is site is built using [Quarto](https://quarto.org).
 
 ## Local Development
 
@@ -50,24 +43,6 @@ This site uses GitHub Actions for automatic deployment:
 2. GitHub Actions automatically renders the Quarto site
 3. The built site is deployed to GitHub Pages
 4. Changes appear live within 2-3 minutes
-
-### First-Time Setup
-
-To deploy this site to GitHub Pages:
-
-1. Push the repository to GitHub
-2. Go to **Settings → Pages**
-3. Under **Source**, select **GitHub Actions**
-4. The site will be automatically deployed on the next push to `main`
-
-## Contributing
-
-### Adding a New Recipe
-
-1. Create a new `.qmd` file in the `recipes/` directory
-2. Follow the structure shown in `recipes/example-recipe.qmd`
-3. Add your recipe to the sidebar in `_quarto.yml`
-4. Commit and push your changes
 
 ### Recipe Structure
 

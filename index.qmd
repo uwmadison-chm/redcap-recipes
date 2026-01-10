@@ -21,14 +21,19 @@ You should expect to adapt these recipes to your own studies. Your field names w
 
 ## About 
 
-This guide was developed using a REDCap system at the University of Wisconsin-Madison, administered by the School of Medicine and Public Health. The authors are not REDCap admins; our knowledge of REDCap's inner workings and implementation is limited to what is publicly available.
+This guide was developed using a REDCap system at the University of Wisconsin-Madison, hosted by the School of Medicine and Public Health. The authors are neither REDCap admins nor members of the REDCap consortium; our knowledge of REDCap's inner workings and implementation is limited to what is publicly available, with advice from our local admin team.
 
 At the time of writing, the REDCap system we are using is version 15.6.1. It is mainly a stock installation; few (if any) guides here will rely on external modules. No guides will require system admin rights on your REDCap system.
 
 You will need to have **Project Setup and Design** rights to your project. Some recipes will require other rights (**Alerts & Notifications**, **Data Import**, and so on.) We'll assume you already have necessary rights. Some recipes will only be practical for some studies through the use of the API, though the Data Import Tool will almost always be an alternative.
 
-This guide was written by Nate Vack and (hopefully!) Stuti Shrivistava at the Center for Healthy Minds at the University of Wisconsin-Madison.
+This guide was written by Nate Vack and Stuti Shrivistava at the Center for Healthy Minds at the University of Wisconsin-Madison.
 
 ## Contributing
 
 Have a recipe to share? Found an error? Contributions are welcome! Visit our [GitHub repository](https://github.com/centerforhealthyminds/redcap-recipes) to contribute or report issues.
+
+## Citations
+
+* PA Harris, R Taylor, R Thielke, J Payne, N Gonzalez, JG. Conde, [Research electronic data capture (REDCap) – A metadata-driven methodology and workflow process for providing translational research informatics support](http://www.sciencedirect.com/science/article/pii/S1532046408001226), J Biomed Inform. 2009 Apr;42(2):377-81
+* PA Harris, R Taylor, BL Minor, V Elliott, M Fernandez, L O’Neal, L McLeod, G Delacqua, F Delacqua, J Kirby, SN Duda, REDCap Consortium, The [REDCap consortium: Building an international community of software partners](https://www.sciencedirect.com/science/article/pii/S1532046419301261), J Biomed Inform. 2019 May 9

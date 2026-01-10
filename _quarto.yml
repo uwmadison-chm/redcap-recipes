@@ -29,7 +29,13 @@ website:
       - section: "Recipes"
         contents:
           - recipes/index.qmd
-          - auto: "recipes/*/index.qmd"
+          - recipes/stopping_alerts_asis/index.qmd
+          - section: "Ecological Momentary Assessment"
+            contents:
+              - recipes/ema/index.qmd
+              - recipes/ema/fixed_schedule/index.qmd
+              - recipes/ema/random_automatic/index.qmd
+              - recipes/ema/random_flexible/index.qmd
 
   page-footer:
     left: |

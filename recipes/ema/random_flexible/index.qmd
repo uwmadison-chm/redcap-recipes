@@ -1,0 +1,99 @@
+---
+title: "EMA: Random Schedule (Flexible)"
+description: "Implementing flexible random EMA sampling using repeating instruments and Alerts"
+date: "2026-01-09"
+categories: [ema, survey, scheduling, alert, repeating-instruments, api]
+---
+
+## PLACEHOLDER CONTENT
+
+## Overview
+
+**Problem:** You need random sampling with flexible scheduling, the ability to adjust sample times, and control over spacing constraints.
+
+**Solution:** Use a repeating instrument to store sample times, generate schedules externally (R, Python, or spreadsheet), import them using the Data Import Tool or API, and send surveys using Alerts.
+
+## Prerequisites
+
+* A REDCap project (can be classic or longitudinal)
+* An email field for participants
+* Ability to generate random schedules (R, Python, Excel, or similar)
+* **Data Import Tool** access OR API access
+* **Project Setup and Design** rights
+* **Alerts & Notifications** rights
+
+## When to Use This Approach
+
+This approach works well when:
+
+- You need flexible random sampling with custom constraints
+- You want to adjust schedules after participant enrollment
+- You can generate schedules using external tools
+- You don't need REDCap's built-in survey reminders/expiration (or can implement them yourself)
+- You want fine control over sampling rules (minimum spacing, time-of-day constraints, etc.)
+
+See the [EMA overview](../) for other approaches.
+
+## Trade-offs
+
+**Advantages:**
+- Maximum flexibility in scheduling logic
+- Can adjust schedules after enrollment
+- Easy to implement complex spacing rules
+- Moderate setup complexity
+- No need for many events or ASIs
+
+**Drawbacks:**
+- Requires external tools to generate schedules
+- Must manually implement reminders and expiration if needed
+- Requires Data Import Tool or API access
+- Survey link management is manual (via Alert)
+
+## Steps
+
+<!-- TODO: Add detailed implementation steps -->
+
+### 1. Create the Repeating Instrument
+
+### 2. Generate Sample Schedules
+
+This can be done in R, Python, or even a spreadsheet with formulas.
+
+### 3. Import Sample Times
+
+Using either the Data Import Tool or API.
+
+### 4. Create Your EMA Survey
+
+### 5. Configure Alert to Send Survey Links
+
+### 6. (Optional) Implement Reminders and Expiration
+
+If needed, use additional calculated fields and Alerts.
+
+## Complete Example
+
+<!-- TODO: Add example with R/Python code and Alert configuration -->
+
+## Notes and Tips
+
+* Repeating instruments are perfect for variable-length lists of samples
+* You can regenerate and re-import schedules if needed (e.g., if a participant requests time changes)
+* Alert logic can check if a survey was completed before sending reminders
+* Consider using a calculated field for "survey_url" that includes record ID and instance number
+
+## Troubleshooting
+
+**Problem:** Alerts aren't sending at the scheduled times
+
+**Solution:** Verify that your Alert schedule condition properly references the sample time field on the repeating instrument
+
+**Problem:** Can't implement survey expiration
+
+**Solution:** Add a calculated field that checks if current time is past expiration, and use it in your Alert logic or survey display logic
+
+## Related Resources
+
+* [Back to EMA Overview](../)
+* [REDCap API Documentation](https://projectredcap.org)
+* [Stopping Alerts and ASIs](../../stopping_alerts_asis/)

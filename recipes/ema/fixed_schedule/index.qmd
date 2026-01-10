@@ -1,0 +1,66 @@
+---
+title: "EMA: Fixed Schedule"
+description: "Implementing EMA with a fixed, predictable schedule using Automated Survey Invitations"
+date: "2026-01-09"
+categories: [ema, survey, scheduling, asi]
+---
+
+## ! NOTE ! THIS IS PLACEHOLDER CONTENT
+
+
+## Overview
+
+**Problem:** You need to collect EMA data from participants at predetermined times (e.g., 9 AM, 1 PM, 5 PM daily for two weeks).
+
+**Solution:** Use REDCap events and Automated Survey Invitations (ASIs) to send surveys at specific times.
+
+## Prerequisites
+
+* A longitudinal REDCap project
+* An email field for participants
+* **Project Setup and Design** rights
+* **Alerts & Notifications** rights
+
+## When to Use This Approach
+
+Fixed schedules work well when:
+
+- All participants receive surveys at the same times
+- The schedule is predictable and consistent
+- You want minimal setup complexity
+- Participants knowing the schedule isn't a concern
+
+See the [EMA overview](../) for other approaches.
+
+## Steps
+
+<!-- TODO: Add detailed implementation steps -->
+
+### 1. Set Up Events
+
+### 2. Create Your EMA Survey
+
+### 3. Configure Automated Survey Invitations
+
+### 4. Test the Schedule
+
+## Complete Example
+
+<!-- TODO: Add example with CSV files or screenshots -->
+
+## Notes and Tips
+
+* Fixed schedules are the simplest EMA implementation in REDCap
+* Consider time zones if your study spans multiple regions
+* You can use the "Ensure logic is still true" option to prevent surveys from sending if conditions change
+
+## Troubleshooting
+
+**Problem:** Surveys aren't sending at expected times
+
+**Solution:** Check that your ASI conditions are met and that the designated email field has valid addresses
+
+## Related Resources
+
+* [Back to EMA Overview](../)
+* [Stopping Alerts and ASIs](../../stopping_alerts_asis/)

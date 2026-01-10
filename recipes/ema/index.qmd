@@ -1,0 +1,52 @@
+---
+title: "Ecological Momentary Assessment (EMA)"
+description: "Choosing and implementing EMA schedules in REDCap"
+date: "2026-01-09"
+categories: [ema, survey, scheduling]
+---
+
+## Overview
+
+Ecological Momentary Assessment (EMA) involves collecting data from participants multiple times throughout their daily lives. REDCap offers several approaches to implement EMA, each with different trade-offs in complexity, flexibility, and maintenance.
+
+::: aside
+This is also known as Experience Sampling or Experience Sampling Methods, or ES / ESM. In this book, we're sticking to EMA.
+:::
+
+This guide will help you choose the right approach for your study.
+
+## Choosing an Approach
+
+### Decision Guide
+
+#### [Fixed Schedule](fixed_schedule/)
+
+- Sample times are the same for all participants
+- Schedule doesn't need to adapt based on participant responses
+- You want the simplest possible implementation
+
+#### [Random Schedule (Automatic)](random_automatic/)
+
+- You need random/semi-random sampling within defined windows
+- The schedule can be fully determined up-front
+- You can set up as many events and Automated Survey Invitations (ASIs) as you will have samples
+- You want everything managed within REDCap (no external tools needed to compute schedules)
+
+#### [Random Schedule (Flexible)](random_flexible/)
+
+- You need random sampling but want flexibility to adjust schedules
+- You want to more tightly control sampling constraints (minimum spacing, etc.)
+- You can use an external tool or script (R, Python, or spreadsheets) to generate schedules
+- You can use the Data Import Tool or API
+- You don't need REDCap's built-in survey reminder/expiration features
+
+## Comparison Table
+
+| Feature | Fixed | Random (Automatic) | Random (Flexible) |
+|---------|-------|-------------------|-------------------|
+| Setup complexity | Low | High | Medium |
+| Requires external tools | No | Yes (event / ASI mapping) | Yes (schedule generation) |
+| Can adjust schedules after start | Limited | No | Yes |
+| Supports custom spacing rules | No | Limited | Yes |
+| Supports survey reminders | Yes | Yes | Manual implementation |
+| Supports survey expiration | Yes | Yes | Manual implementation |
