@@ -9,8 +9,8 @@ website:
   title: "REDCap Recipes"
   description: "Practical guides for implementing specific REDCap features and workflows while avoiding pitfalls"
 
-  site-url: https://centerforhealthyminds.github.io/redcap-recipes
-  repo-url: https://github.com/centerforhealthyminds/redcap-recipes
+  site-url: https://github.com/uwmadison-chm/redcap-recipes
+  repo-url: https://github.com/uwmadison-chm/redcap-recipes
   repo-actions: [edit, issue]
 
   navbar:
@@ -18,7 +18,7 @@ website:
     search: true
     right:
       - icon: github
-        href: https://github.com/centerforhealthyminds/redcap-recipes
+        href: https://github.com/uwmadison-chm/redcap-recipes
 
   sidebar:
     style: "docked"
@@ -38,7 +38,7 @@ website:
       Center for Healthy Minds
       University of Wisconsin-Madison
     right: |
-      [GitHub](https://github.com/centerforhealthyminds/redcap-recipes)
+      [GitHub](https://github.com/uwmadison-chm/redcap-recipes)
 
 format:
   html:
