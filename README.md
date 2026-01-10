@@ -2,6 +2,8 @@
 
 Practical guides and recipes for working with REDCap (Research Electronic Data Capture).
 
+Live site is at [https://uwmadison-chm.github.io/redcap-recipes/](https://uwmadison-chm.github.io/redcap-recipes/)
+
 ## About
 
 This site is a collection of solutions to REDCap challenges that we've found over the years. It's not a general REDCap guide. The book is site is built using [Quarto](https://quarto.org).
@@ -89,9 +91,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Maintainers
 
 Maintained by the [Center for Healthy Minds](https://centerhealthyminds.org/) at the University of Wisconsin-Madison.
-
-## Questions or Suggestions?
-
-- 🐛 [Report an issue](https://github.com/centerforhealthyminds/redcap-recipes/issues)
-- 💡 [Request a recipe](https://github.com/centerforhealthyminds/redcap-recipes/issues/new)
-- 🤝 [Submit a pull request](https://github.com/centerforhealthyminds/redcap-recipes/pulls)
