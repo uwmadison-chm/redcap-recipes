@@ -12,16 +12,13 @@ Each recipe should have:
    - `title`: Clear, action-oriented (e.g., "Stopping Alerts and ASIs")
    - `description`: One-sentence summary of what the recipe solves
    - `categories`: Relevant tags (lowercase, use existing categories when possible)
-
 2. **Overview section** with:
-   - **Problem:** One paragraph describing the challenge
-   - **Solution:** One paragraph describing the approach (not detailed steps)
-
+   - **Problem:** One short paragraph describing the challenge
+   - **Solution:** One short paragraph describing the approach (not detailed steps)
 3. **Prerequisites section**: Bulleted list of what must exist before starting
-
-4. **Steps section**: Numbered list with clear, actionable instructions
-
+4. **Steps section**: List with clear, actionable instructions. No numbers.
 5. **Notes section** (optional): Important behaviors, caveats, or warnings
+6. (Optionally) **Troubleshooting section:** List common troubleshooting actions
 
 ## Writing Style
 
@@ -32,14 +29,10 @@ Each recipe should have:
 
 ### Formatting
 
-**REDCap terminology:**
-- Use backticks for field names: `email`, `no_contact`
-- Use backticks for REDCap elements: `@CALCTEXT`, `@HIDDEN`, `@READONLY`
-- Use backticks for form names: `tracking`, `baseline`
-
 **UI navigation:**
 - Bold each menu level, separate with `>`
 - Example: **Project Setup** > **Designate an email field for communications**
+- Generally don't include subsections of pages, unless talking about the section in question
 
 **Lists:**
 - Nest bullets/sub-bullets with 4 spaces
@@ -49,15 +42,29 @@ Each recipe should have:
 **Emphasis:**
 - Use **bold** for UI elements and emphasis
 - Use _italics_ sparingly, mainly for subtle emphasis
-- Use backticks for technical terms, not emphasis
+- Use backticks for form/field names and calculations, not emphasis
+
+**Warnings and traps:**
+- Use a `::: {.callout-warning}` block.
 
 ## Common Patterns
 
-### Referring to field types
-"A Yes/No field" not "a checkbox" or "a yes/no field"
+### Project and REDCap terminology:
+- Use backticks for field names: `email`, `no_contact`
+- Use backticks for REDCap elements: `@CALCTEXT`, `@HIDDEN`, `@READONLY`
+- Use backticks for form names: `tracking`, `baseline`
+- Instrument, form, or survey? "Instrument" is generic. "Form" means it faces staff. "Survey" means it's accessible to participants.
 
-### Talking about forms
-"The `tracking` form" not "the Tracking form" (use backticks, lowercase)
+### Abbreviations
+- Spell out common REDCap terms once with the abbreviation in parentheses, then use the abbreviation throughout the rest of the document
+- Example: "Automated Survey Invitation (ASI)" in the overview, then "ASI" in all subsequent sections
+- Assume readers are familiar with standard REDCap abbreviations
+
+### Referring to field types
+Use REDCap terminiology: "A Yes/No field" not "a checkbox" or "a yes/no field." "a @CALCTEXT field," not "a calculated text field."
+
+### Talking about instruments
+"The `morning_diary` survey" not "the Morning diary survey" (use backticks, lowercase, underscore)
 
 ### Describing calculations
 Include the full `@CALCTEXT()` or `@CALCDATE()` syntax in code blocks or inline with backticks. You should be able to paste the calculation where it goes and have it work.
@@ -72,11 +79,10 @@ Include the full `@CALCTEXT()` or `@CALCDATE()` syntax in code blocks or inline 
 - Test all recipes on REDCap version 15.6.1 or note version requirements
 - Assume standard REDCap installation (no external modules unless specified)
 - No admin access required (note if API access is needed)
-- Warning messages from REDCap should be quoted exactly
+- REDCap UI elements and warnings may be shortened if long, but not reworded — if we mention REDCap text in a recipe, you should be able to find that exact text in the REDCap UI
 
 ## Grammar and Style
 
-- Use contractions sparingly
 - Write in active voice; you are writing a list of steps for someone to follow
 - Use sentence case for headings
 - Prefer "participant" over "subject"

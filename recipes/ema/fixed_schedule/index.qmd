@@ -5,18 +5,14 @@ date: "2026-01-09"
 categories: [ema, survey, scheduling, asi]
 ---
 
-## ! NOTE ! THIS IS PLACEHOLDER CONTENT
-
-
 ## Overview
 
-**Problem:** You need to collect EMA data from participants at predetermined times (e.g., 9 AM, 1 PM, 5 PM daily for two weeks).
+**Problem:** You need to collect EMA data from participants at predetermined times — for example, a daily diary every morning at 9AM.
 
-**Solution:** Use REDCap events and Automated Survey Invitations (ASIs) to send surveys at specific times.
+**Solution:** Use a repeating instrument with an Automated Survey Invitation (ASI)
 
 ## Prerequisites
 
-* A longitudinal REDCap project
 * An email field for participants
 * **Project Setup and Design** rights
 * **Alerts & Notifications** rights
@@ -34,33 +30,59 @@ See the [EMA overview](../) for other approaches.
 
 ## Steps
 
-<!-- TODO: Add detailed implementation steps -->
+### Create the Welcome survey
 
-### 1. Set Up Events
+1. Create a new instrument called `welcome`
+1. Add an email field to capture the participant's email address:
+    * Field Type: Text Box
+    * Validation: Email
+    * Variable Name: `email`
+1. Enable the instrument as a survey in **Designer** > **Enable** (click the instrument options icon)
+1. In **Project Setup** > **Designate an email field for communications**, select `email`
 
-### 2. Create Your EMA Survey
+### Create the Diary instrument
 
-### 3. Configure Automated Survey Invitations
+1. Create a new instrument called `diary`
+1. Add your data collection fields.
+1. Enable the instrument as a survey; set its **Survey settings** how you want them
 
-### 4. Test the Schedule
+### Set up the Diary as a Repeating Instrument
 
-## Complete Example
+1. Go to **Project Setup** >  **Repeating instruments**
+1. Click **Enable**
+1. Configure the repeating instruments:
+    * Check the box next to `diary`
 
-<!-- TODO: Add example with CSV files or screenshots -->
+### Create the ASI
 
-## Notes and Tips
+1. Go to **Designer** and click **Survey Settings** for the `diary` instrument
+1. Enable **Automated Invitations**
+1. Set the **Conditions** so the logic is appropriate for your study. In the example, set it to when the `welcome` survey is completed.
+1. Set **When to send...** as you want them. If you're testing, you might want **Send immediately**. For a daily diary you might want 9 AM.
+1. Set **How many times to send it** as you want. For testing, you might set this to send a few times, every 5 minutes. For a real diary, you might have it send once a day for 30 days.
 
-* Fixed schedules are the simplest EMA implementation in REDCap
-* Consider time zones if your study spans multiple regions
-* You can use the "Ensure logic is still true" option to prevent surveys from sending if conditions change
+## Notes
+
+* **Timing precision:** How often REDCap sends scheduled messages depends on your instance's server settings. Our server sends scheduled messages every 5 minutes. **Send immediately** alerts are generally not subject to this delay.
+* **First survey timing:** The first diary invitation will be sent on the next scheduled time after the welcome survey is completed. If a participant completes the welcome survey at 2 PM and you've scheduled surveys for 9 AM, they'll receive their first diary survey the next morning at 9 AM.
+* **New instance behavior:** Each survey invitation creates a new repeating instance of the `diary` instrument. You don't need to manually create instances with `[new-instance]`
+* **Time zones:** REDCap uses the server's time zone for all automated invitations. Taking time zones into account is a subject for another recipe.
+* **Stopping the invitations:** To stop surveys for participants who withdraw, see [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
+* **Survey expiration:** Setting an expiration (e.g., 24 hours) can help keep data collection timely, but consider your participants' schedules and availability
+* **Other contact methods:** The exact same practices apply if you're using an SMS provider such as Twilio or Mosio.
+
+::: {.callout-warning}
+Remember the server schedule delay when you are troubleshooting!
+:::
+
 
 ## Troubleshooting
 
-**Problem:** Surveys aren't sending at expected times
+* Verify the ASI is active and saved
+* Confirm the condition logic evaluates to true for the records you expect
+* Check that the email field is really the designated email field
+* Check **Survey Distribution Tools** > **Survey Invitation Log** to see scheduled and sent invitations
 
-**Solution:** Check that your ASI conditions are met and that the designated email field has valid addresses
-
-## Related Resources
-
-* [Back to EMA Overview](../)
-* [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
+::: {.callout-warning}
+During the time between when a survey is scheduled and when it is sent, it will not appear in the **Survey Invitation Log** at all.
+:::
