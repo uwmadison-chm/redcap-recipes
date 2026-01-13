@@ -1,23 +1,21 @@
 ---
 title: "EMA: Random Schedule (Flexible)"
-description: "Implementing flexible random EMA sampling using repeating instruments and Alerts"
-date: "2026-01-09"
-categories: [ema, survey, scheduling, alert, repeating-instruments, api]
+description: "Implementing flexible EMA sampling using repeating events, external schedule generation, and Alerts"
+date: "2026-01-12"
+categories: [ema, survey, scheduling, alert, repeating-events, api]
 ---
-
-## PLACEHOLDER CONTENT
 
 ## Overview
 
-**Problem:** You need random sampling with flexible scheduling, the ability to adjust sample times, and control over spacing constraints.
+**Problem:** You need flexible EMA sampling where schedules are generated externally, can be adjusted after enrollment, and you want tight control over timing constraints without creating dozens of events or Automated Survey Invitations (ASIs).
 
-**Solution:** Use a repeating instrument to store sample times, generate schedules externally (R, Python, or spreadsheet), import them using the Data Import Tool or API, and send surveys using Alerts.
+**Solution:** Use a longitudinal project with repeating events, store delivery schedules in one instrument, collect responses in another, import schedules via the Data Import Tool or API, and send surveys using Alerts with `[current-instance]` piping.
 
 ## Prerequisites
 
-* A REDCap project (can be classic or longitudinal)
-* An email field for participants
-* Ability to generate random schedules (R, Python, Excel, or similar)
+* A longitudinal REDCap project
+* An email field for participants (or phone number for SMS)
+* Ability to generate schedules (R, Python, Excel, or similar)
 * **Data Import Tool** access OR API access
 * **Project Setup and Design** rights
 * **Alerts & Notifications** rights
@@ -26,74 +24,195 @@ categories: [ema, survey, scheduling, alert, repeating-instruments, api]
 
 This approach works well when:
 
-- You need flexible random sampling with custom constraints
+- You need random or semi-random sampling with custom constraints
 - You want to adjust schedules after participant enrollment
 - You can generate schedules using external tools
-- You don't need REDCap's built-in survey reminders/expiration (or can implement them yourself)
 - You want fine control over sampling rules (minimum spacing, time-of-day constraints, etc.)
+- You want both fixed and random schedules to work the same way
+- You need to track which scheduled surveys were answered
 
 See the [EMA overview](../) for other approaches.
 
 ## Trade-offs
 
 **Advantages:**
-- Maximum flexibility in scheduling logic
-- Can adjust schedules after enrollment
-- Easy to implement complex spacing rules
-- Moderate setup complexity
-- No need for many events or ASIs
+
+* Maximum flexibility in scheduling logic
+* Can adjust schedules after enrollment (just re-import)
+* Easy to implement complex spacing rules
+* No need for many events or ASIs
+* Instance numbers link schedules to responses, making analysis straightforward
 
 **Drawbacks:**
-- Requires external tools to generate schedules
-- Must manually implement reminders and expiration if needed
-- Requires Data Import Tool or API access
-- Survey link management is manual (via Alert)
+
+* Requires external tools to generate schedules
+* Must manually implement reminders and expiration
+* Requires Data Import Tool or API access
 
 ## Steps
 
-<!-- TODO: Add detailed implementation steps -->
+### Create the Project Structure
 
-### 1. Create the Repeating Instrument
+* Create a longitudinal project with two events:
+    * `main`: For enrollment and baseline data
+    * `ema`: For the scheduled surveys
+* In the `main` event, add an instrument to collect the participant's email address (or phone number for SMS):
+    * Field Type: Text Box
+    * Validation: Email (or Phone)
+    * Variable Name: `email`
+* In **Project Setup** > **Designate an email field for communications**, select `email`
 
-### 2. Generate Sample Schedules
+### Create the Schedule Instrument
 
-This can be done in R, Python, or even a spreadsheet with formulas.
+* Create a new instrument called `schedule` with at least two fields:
+    * `deliver_at`:
+        * Field Type: Text Box
+        * Validation: Datetime (Y-M-D H:M)
+        * Variable Name: `deliver_at`
+    * `expires_at`:
+        * Field Type: Text Box
+        * Validation: Datetime (Y-M-D H:M)
+        * Variable Name: `expires_at`
+* These fields will be populated by data import or API, not by users
 
-### 3. Import Sample Times
+::: {.callout-note}
+If you have multiple data collection periods (e.g., pre- and post-intervention), it's probably easiest to add an `ema_period` field to the `schedule` form and fill that in with your schedule generation script. The exception would be if you need the Alert text to be different, or if you're collecting different data in your different EMA periods.
+:::
 
-Using either the Data Import Tool or API.
+### Create the EMA Survey Instrument
 
-### 4. Create Your EMA Survey
+* Create a new instrument called `ema` with your data collection fields
+* Add a `started_at` field to track when participants begin the survey:
+    * Field Type: Text Box
+    * Validation: Datetime (Y-M-D H:M)
+    * Variable Name: `started_at`
+    * Action Tags: `@HIDDEN @NOW`
+* Enable the instrument as a survey
+* Configure survey settings as desired
 
-### 5. Configure Alert to Send Survey Links
+### Configure the EMA Event as Repeating
 
-### 6. (Optional) Implement Reminders and Expiration
+* Go to **Project Setup** > **Repeating instruments and events**
+* Click **Enable**
+* For the `ema` event, select **Treat the entire event as repeating**
+* Ensure both the `schedule` and `ema` instruments are designated for the `ema` event
 
-If needed, use additional calculated fields and Alerts.
+::: {.callout-note}
+Instance numbers will now be synchronized across both instruments. Instance 1 of `schedule` corresponds to instance 1 of `ema`, and so on. This makes it easy to see which surveys were completed.
+:::
 
-## Complete Example
+### Generate and Import Schedules
 
-<!-- TODO: Add example with R/Python code and Alert configuration -->
+* Generate your schedules externally using R, Python, Excel, or similar tools. Each row should include:
+    * `record_id`
+    * `redcap_event_name` (the `ema` event's unique name, typically `ema_arm_1`)
+    * `redcap_repeat_instance` (1, 2, 3, ...)
+    * `deliver_at` (format: `YYYY-MM-DD HH:MM`)
+    * `expires_at` (format: `YYYY-MM-DD HH:MM`)
+* Import the schedules using **Data Import Tool** or the API
 
-## Notes and Tips
+::: {.callout-note}
+Schedule generation is left as an exercise for now.
+:::
 
-* Repeating instruments are perfect for variable-length lists of samples
-* You can regenerate and re-import schedules if needed (e.g., if a participant requests time changes)
-* Alert logic can check if a survey was completed before sending reminders
-* Consider using a calculated field for "survey_url" that includes record ID and instance number
+### Create the Alert to Send Surveys
+
+* Go to **Alerts & Notifications**
+* Click **Add New Alert**
+* Configure the Alert:
+    * **Alert title:** Something like "Send EMA Survey"
+    * **Trigger alert when:** `(datediff("now", [ema_arm_1][expires_at][current-instance], "s", true) > 0)`
+        * The `[current-instance]` piping is **critical** — without it, the Alert will evaluate against all instances and send far too many notifications
+        * The logic checks if "now" is before `expires_at`. If the alert is delayed for any reason (REDCap scheduler down, blank email field, bug in logic), expired surveys won't be sent when the problem is fixed.
+    * **Ensure logic is still true before sending:** Check this box
+    * **When to send the alert:** At the time specified by a date/time field
+        * Field: `deliver_at`
+    * **How often to send:** Only once per event-instance in a record
+    * **Email To:** `[email]`
+    * **Email Subject:** Your survey invitation subject
+    * **Alert message:** Include the survey link: `[ema_arm_1][survey-url:ema][current-instance]`
+
+::: {.callout-warning}
+The `[current-instance]` piping is essential in both the trigger logic and the survey URL. Without it, the Alert will not work correctly.
+:::
+
+### (Optional) Add Reminders
+
+If you want to send reminder notifications for incomplete surveys:
+
+* Modify the Alert trigger logic to include a check for whether the survey was started:
+    * `(datediff("now", [ema_arm_1][expires_at][current-instance], "s", true) > 0) and ([ema_arm_1][started_at][current-instance] = "")`
+* This ensures reminders are only sent if the survey hasn't been started yet
+
+### (Optional) Implement Survey Expiration
+
+To hide survey questions after the expiration time:
+
+* On the `ema` instrument, add a calculated field to check if the survey has expired:
+    * Field Type: Calculated Field
+    * Variable Name: `is_expired`
+    * Calculation: `datediff([started_at], [expires_at], "s", true) > 0`
+* Use branching logic on your data collection fields to hide them when `[is_expired] = 1`
+* Add a Descriptive Text field (or use a section header) with branching logic `[is_expired] = 1` that displays an expiration message
+
+::: {.callout-note}
+Multi-page surveys and section headings work well for creating a clean expiration experience.
+:::
+
+## Notes
+
+* **Timing precision:** How often REDCap checks scheduled Alerts depends on your server settings. Our server checks every 5 minutes. **Send immediately** Alerts are generally not subject to this delay.
+* **Scheduled Alerts don't appear in the log immediately:** Between the time an Alert is scheduled and when it's actually sent, it will not appear in the **Alerts Log**. This is normal behavior — don't panic when troubleshooting!
+* **Checking message delivery:** The only way to check whether messages have been delivered is to use the **Notification Log** in **Alerts & Notifications**. It's important to download the log on a regular basis and reconcile it against the schedule to make sure your messages are going out. You'll need a script to do that reconciliation, unfortunately.
+* **Rescheduling:** You can regenerate schedules and re-import them to adjust survey times. A future recipe will cover rescheduling in detail.
+* **Email and SMS:** This approach works identically for both email and SMS (via Twilio, Mosio, or similar providers).
+* **Stopping messages:** To stop surveys for participants who withdraw, see [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
+
+## Traps
+
+::: {.callout-warning}
+Changing the `deliver_at` times will not reschedule already-scheduled Alerts!
+
+To reschedule, you need to toggle the Alert logic to temporarily be false, and then make it true again. One way to do this is to add a `needs_rescheduling` Yes/No field to the `schedule` form, import a 1, then import 0, and include `and [ema_arm_1][needs_rescheduling][current-instance] <> 1` in the Alert logic.
+
+This really deserves its own recipe.
+:::
+
+::: {.callout-warning}
+Once an Alert has been sent, changing its schedule to the future will not re-schedule it. You'll need to add a new instance.
+:::
 
 ## Troubleshooting
 
-**Problem:** Alerts aren't sending at the scheduled times
+### Alerts aren't sending
 
-**Solution:** Verify that your Alert schedule condition properly references the sample time field on the repeating instrument
+* Verify the Alert is enabled and saved
+* Check that the trigger logic evaluates to true for the records you expect
+* Remember the 5-minute (or whatever your server uses) delay for scheduled Alerts
+* Check **Alerts & Notifications** > **View Alerts Log** to see what's been sent
 
-**Problem:** Can't implement survey expiration
+### Too many Alerts are sending
 
-**Solution:** Add a calculated field that checks if current time is past expiration, and use it in your Alert logic or survey display logic
+* Verify you're using `[current-instance]` in the trigger logic
+
+::: aside
+It can be helpful to schedule your alert timings at the same granularity as the server's scheduler.
+:::
+
+### Alerts are sometimes missing from the logs
+During the time between when an Alert's scheduled time has passed and when it is sent, it will not appear in the **Notification Log** at all.
+
+### Survey links aren't working
+
+* Verify you're using `[ema_arm_1][survey-url:ema][current-instance]` (adjust the event name for your project)
+* Check that the `ema` instrument is enabled as a survey
+
+### Import fails
+
+* Verify your event name matches REDCap's unique event name (e.g., `ema_arm_1`)
+* Check that you've selected **Allow creation of new records?** in the Data Import Tool
 
 ## Related Resources
 
 * [Back to EMA Overview](../)
-* [REDCap API Documentation](https://projectredcap.org)
 * [Stopping Alerts and ASIs](../../stopping_alerts_asis/)

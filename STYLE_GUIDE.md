@@ -38,6 +38,7 @@ Each recipe should have:
 - Nest bullets/sub-bullets with 4 spaces
 - Use `*` for unordered lists
 - Use `1.` for all numbered items (Markdown auto-numbers)
+- Only use numbered lists when you are enumerating steps -- if it's "do this, here are reasons" you probably want bullets
 
 **Emphasis:**
 - Use **bold** for UI elements and emphasis
