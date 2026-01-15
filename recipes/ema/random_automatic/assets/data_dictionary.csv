@@ -1,0 +1,34 @@
+"Variable / Field Name","Form Name","Section Header","Field Type","Field Label","Choices, Calculations, OR Slider Labels","Field Note","Text Validation Type OR Show Slider Number","Text Validation Min","Text Validation Max",Identifier?,"Branching Logic (Show field only if...)","Required Field?","Custom Alignment","Question Number (surveys only)","Matrix Group Name","Matrix Ranking?","Field Annotation"
+record_id,ema_setup,,text,"Record ID",,,,,,,,,,,,,
+email,ema_setup,,text,Email,,,email,,,y,,y,,,,,
+params_table,ema_setup,,descriptive,"<div class=""rich-text-field-label""><h4>EMA Parameters</h4> <table border=""1""> <tbody> <tr> <td>EMA Start Date</td> <td>Seed Input</td> <td>a</td> <td>c</td> <td>m</td> <td>Processed Seed</td> </tr> <tr> <td>{ema_start_on}</td> <td>{seed_input}</td> <td>{a}</td> <td>{c}</td> <td>{m}</td> <td>{seed}</td> </tr> <tr> <td colspan=""3"">Period 1 Start (min from midnight)</td> <td colspan=""3"">Period 1 Length (min)</td> </tr> <tr> <td colspan=""3"">{period_start_01}</td> <td colspan=""3"">{period_len_01}</td> </tr> <tr> <td colspan=""3"">Period 2 Start (min from midnight)</td> <td colspan=""3"">Period 2 Length (min)</td> </tr> <tr> <td colspan=""3"">{period_start_02}</td> <td colspan=""3"">{period_len_02}</td> </tr> </tbody> </table></div>",,,,,,,,,,,,,
+schedule_table,ema_setup,,descriptive,"<div class=""rich-text-field-label""><h4>Computed schedule</h4> <table style=""border-collapse: collapse; widtd: 100%; height: 151.5px;"" border=""1""> <tbody> <tr style=""height: 25px;""> <td>Day</td> <td>Sample 1 min from midnight</td> <td>Sample 1: deliver at</td> <td>Sample 2 min from midnight</td> <td>Sample 2 deliver at</td> </tr> <tr style=""height: 42px;""> <td>Day 1</td> <td>{min_from_midnight_d01_s01}</td> <td>{deliver_at_d01_s01}</td> <td>{min_from_midnight_d01_s02}</td> <td>{deliver_at_d01_s02}</td> </tr> <tr style=""height: 42px;""> <td>Day 2</td> <td>{min_from_midnight_d02_s01}</td> <td>{deliver_at_d02_s01}</td> <td>{min_from_midnight_d02_s02}</td> <td>{deliver_at_d02_s02}</td> </tr> <tr style=""height: 42.5px;""> <td>Day 3</td> <td>{min_from_midnight_d03_s01}</td> <td>{deliver_at_d03_s01}</td> <td>{min_from_midnight_d03_s02}</td> <td>{deliver_at_d03_s02}</td> </tr> </tbody> </table></div>",,,,,,,,,,,,,
+seed_input,ema_setup,,text,"Seed input",,,integer,,,,,,,,,," @DEFAULT=""[record-name]"""
+a,ema_setup,,text,a,,,integer,,,,,,,,,," @DEFAULT='1664525'"
+c,ema_setup,,text,c,,,integer,,,,,,,,,," @DEFAULT='1013904223'"
+m,ema_setup,,text,m,,,integer,,,,,,,,,," @DEFAULT='4294967296'"
+seed,ema_setup,,calc,"Seed (processed)","mod((([a] * mod((([a] * mod((([a] * [seed_input]) + [c]), [m])) + [c]), [m])) + [c]), [m])",,,,,,,,,,,,
+ema_start_on,ema_setup,,text,"EMA Starts On",,,date_ymd,,,,,y,,,,,
+period_start_01,ema_setup,,text,"Period start 01",,"minutes from midnight",integer,,,,,,,,,," @DEFAULT='555'"
+period_len_01,ema_setup,,text,"Period length 01",,minutes,integer,,,,,,,,,," @DEFAULT='90'"
+period_start_02,ema_setup,,text,"Period start 02",,"minutes from midnight",integer,,,,,,,,,," @DEFAULT='795'"
+period_len_02,ema_setup,,text,"Period length 02",,minutes,integer,,,,,,,,,," @DEFAULT='90'"
+rand_01,ema_setup,"Random Numbers",calc,"Random 01","mod((([a] * [seed]) + [c]), [m])",,,,,,,,,,,,
+rand_02,ema_setup,,calc,"Random 02","mod((([a] * [rand_01]) + [c]), [m])",,,,,,,,,,,,
+rand_03,ema_setup,,calc,"Random 03","mod((([a] * [rand_02]) + [c]), [m])",,,,,,,,,,,,
+rand_04,ema_setup,,calc,"Random 04","mod((([a] * [rand_03]) + [c]), [m])",,,,,,,,,,,,
+rand_05,ema_setup,,calc,"Random 05","mod((([a] * [rand_04]) + [c]), [m])",,,,,,,,,,,,
+rand_06,ema_setup,,calc,"Random 06","mod((([a] * [rand_05]) + [c]), [m])",,,,,,,,,,,,
+min_from_midnight_d01_s01,ema_setup,,calc,"Day 1 Sample 1 minutes","[period_start_01] + mod([rand_01], [period_len_01])",,,,,,,,,,,,
+deliver_at_d01_s01,ema_setup,,text,"Day 1 Sample 1 delivery",,,datetime_seconds_ymd,,,,,,,,,," @CALCDATE([ema_start_on], (0 * (24*60)) + [min_from_midnight_d01_s01], 'm')"
+min_from_midnight_d01_s02,ema_setup,,calc,"Day 1 Sample 2 minutes","[period_start_02] + mod([rand_02], [period_len_02])",,,,,,,,,,,,
+deliver_at_d01_s02,ema_setup,,text,"Day 1 Sample 2 delivery",,,datetime_seconds_ymd,,,,,,,,,," @CALCDATE([ema_start_on], (0 * (24*60)) + [min_from_midnight_d01_s02], 'm')"
+min_from_midnight_d02_s01,ema_setup,,calc,"Day 2 Sample 1 minutes","[period_start_01] + mod([rand_03], [period_len_01])",,,,,,,,,,,,
+deliver_at_d02_s01,ema_setup,,text,"Day 2 Sample 1 delivery",,,datetime_seconds_ymd,,,,,,,,,," @CALCDATE([ema_start_on], (1 * (24*60)) + [min_from_midnight_d02_s01], 'm')"
+min_from_midnight_d02_s02,ema_setup,,calc,"Day 2 Sample 2 minutes","[period_start_02] + mod([rand_04], [period_len_02])",,,,,,,,,,,,
+deliver_at_d02_s02,ema_setup,,text,"Day 2 Sample 2 delivery",,,datetime_seconds_ymd,,,,,,,,,," @CALCDATE([ema_start_on], (1 * (24*60)) + [min_from_midnight_d02_s02], 'm')"
+min_from_midnight_d03_s01,ema_setup,,calc,"Day 3 Sample 1 minutes","[period_start_01] + mod([rand_05], [period_len_01])",,,,,,,,,,,,
+deliver_at_d03_s01,ema_setup,,text,"Day 3 Sample 1 delivery",,,datetime_seconds_ymd,,,,,,,,,," @CALCDATE([ema_start_on], (2 * (24*60)) + [min_from_midnight_d03_s01], 'm')"
+min_from_midnight_d03_s02,ema_setup,,calc,"Day 3 Sample 2 minutes","[period_start_02] + mod([rand_06], [period_len_02])",,,,,,,,,,,,
+deliver_at_d03_s02,ema_setup,,text,"Day 3 Sample 2 delivery",,,datetime_seconds_ymd,,,,,,,,,," @CALCDATE([ema_start_on], (2 * (24*60)) + [min_from_midnight_d03_s02], 'm')"
+how_feeling,ema,,radio,"How are you feeling?","good, Good | bad, Bad",,,,,,,,,,,,

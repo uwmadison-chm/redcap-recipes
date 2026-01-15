@@ -162,11 +162,17 @@ Multi-page surveys and section headings work well for creating a clean expiratio
 ## Notes
 
 * **Timing precision:** How often REDCap checks scheduled Alerts depends on your server settings. Our server checks every 5 minutes. **Send immediately** Alerts are generally not subject to this delay.
-* **Scheduled Alerts don't appear in the log immediately:** Between the time an Alert is scheduled and when it's actually sent, it will not appear in the **Alerts Log**. This is normal behavior — don't panic when troubleshooting!
-* **Checking message delivery:** The only way to check whether messages have been delivered is to use the **Notification Log** in **Alerts & Notifications**. It's important to download the log on a regular basis and reconcile it against the schedule to make sure your messages are going out. You'll need a script to do that reconciliation, unfortunately.
+* **Scheduled Alerts are sometimes absent:** Between the time an Alert is scheduled and when it's actually sent, it will not appear in the **Alerts Log** in either the past or future alerts.
+* **Checking message delivery:** The only way to check whether messages have been delivered is to use the **Notification Log** in **Alerts & Notifications**.
 * **Rescheduling:** You can regenerate schedules and re-import them to adjust survey times. A future recipe will cover rescheduling in detail.
 * **Email and SMS:** This approach works identically for both email and SMS (via Twilio, Mosio, or similar providers).
 * **Stopping messages:** To stop surveys for participants who withdraw, see [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
+* **Time zones:** Time zones will
+
+::: {.callout-caution title="Don't forget: Download those Notificaiton logs!"}
+
+The only way you can make sure your Alerts are being delivered is to download the Notification Log. Don't forget to do this on a regular basis (and reconcile against what you think you are delivering) or you may realize you haven't been collecting the data you think you have.
+:::
 
 ## Traps
 

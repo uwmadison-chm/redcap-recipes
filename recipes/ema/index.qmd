@@ -1,5 +1,5 @@
 ---
-title: "Ecological Momentary Assessment (EMA)"
+title: "Ecological Momentary Assessment (EMA) - Overview"
 description: "Choosing and implementing EMA schedules in REDCap"
 date: "2026-01-09"
 categories: [ema, survey, scheduling]

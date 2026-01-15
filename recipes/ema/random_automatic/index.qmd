@@ -1,93 +1,375 @@
 ---
 title: "EMA: Random Schedule (Automatic)"
 description: "Implementing semi-random EMA sampling using calculated fields, events, and Automated Survey Invitations"
-date: "2026-01-09"
+date: "2026-01-14"
 categories: [ema, survey, scheduling, asi, calculated-fields]
 ---
 
-## ! NOTE ! THIS IS PLACEHOLDER CONTENT
-
 ## Overview
 
-**Problem:** You need random or semi-random sampling within defined windows, but want everything managed within REDCap without external scheduling tools.
+**Problem:** You need random or semi-random sampling within defined time windows, but want schedules generated automatically within REDCap without external tools.
 
-**Solution:** Use calculated fields with a pseudo-random number generator (Linear Congruential Generator) to determine sample times, then set up events and ASIs for each possible sample.
+**Solution:** Use calculated fields implementing a pseudo-random number generator (PRNG) to compute sample times at enrollment, create one event per sample, and use Automated Survey Invitations (ASIs) to deliver surveys at the calculated times.
+
+::: {.aside}
+##### Random numbers in REDCap?
+
+We're using a [Linear Congruential Generator](https://en.wikipedia.org/wiki/Linear_congruential_generator) (LCG): a pseudo-random number generator we chose because it's straightforward to build with the tools REDCap gives you.
+
+This generator relies on four parameters: A _multiplier_ `a`, an _increment_ `c`, a _modulus_ `m`, and an _starting value_ `seed`. It uses a chained operation -- every time we generate a new value, we use the previous value as the seed. See the Wikipedia page for more details.
+:::
 
 ## Prerequisites
 
 * A longitudinal REDCap project
 * An email field for participants
-* Comfort with uploading CSV files (instruments, events, event mappings, ASIs)
+* Ability to generate and upload CSV files (for events, event mappings, instruments, and ASIs)
 * **Project Setup and Design** rights
+* **Alerts & Notifications** rights
 
 ## When to Use This Approach
 
 This approach works well when:
 
-- You need random/semi-random sampling within time windows
-- The complete schedule can be determined at study enrollment
-- You want everything self-contained in REDCap
-- You're willing to invest upfront setup time for automated operation
-- You can define explicit sampling windows (e.g., between 9-11 AM, 1-3 PM, 5-7 PM)
+- You need unpredictably-timed sampling within defined time windows, with different schedules per participant
+- The schedule can be fully determined before sampling begins
+- You want everything self-contained in REDCap (no external scheduling or API)
+- You're willing to invest significant upfront setup effort
+- You can define explicit sampling periods (e.g., 9:15-10:45 AM, 11:15-12:45 PM, 1:15-2:45 PM)
+- Your total number of samples is bounded and not immense -- things get tricker if you need to exceed about 100 samples.
 
 See the [EMA overview](../) for other approaches.
 
 ## Trade-offs
 
 **Advantages:**
-- Fully automated within REDCap
-- Uses built-in ASI features (reminders, expiration, completion tracking)
-- No need for external scheduling tools or API access
-- Randomization happens at enrollment
+
+* Fully automated within REDCap
+* Uses built-in ASI features (reminders, expiration, completion tracking)
+* No external scheduling tools or API access required
+* Reproducible randomization based on seed values
+* Schedule is visible immediately after generation
 
 **Drawbacks:**
-- Complex initial setup with many calculated fields
-- Requires many events (one per possible sample)
-- Requires many ASIs (one per event)
-- Limited flexibility - schedule is determined at enrollment
-- Spacing constraints require explicit sample windows
+
+* _Very complex_ initial setup many — possibly hundreds — of calculated fields
+* Requires one event per sample (e.g., 35 events for 5 samples/day × 7 days)
+* Requires one ASI per sample
+* REDCap calculation limits constrain total sample count
+* Performance considerations with many calculated fields
+* Debugging calculation chains is challenging
+
+::: {.callout-warning title="Complexity warning"}
+Is this the _most_ complex thing you can do in REDCap? We're not sure, but it's close. Do not add complexity beyond what you need. Consider the [flexible approach](../random_flexible/) if it can work for you.
+:::
+
+## How It Works
+
+This approach uses three key techniques:
+
+1. **Pseudo-random number generator:** Generates unpredictable numbers, unique to each participant, using only calculated fields. Each field calculates the next number from the previous one.
+2. **Time window mapping:** Each sampling period (e.g., "morning slot") has a start time and duration. The generated numbers are used to pick a time within each period.
+3. **Event-per-sample architecture:** Each potential sample gets its own event with an ASI that triggers at the calculated time.
+
+::: {.aside title="Why so many events?"}
+##### Why so many events?
+
+For some designs, it might be possible to do this with repeating instruments. There are some tricky bugs to figure out, though. This approach is bulky but reliable.
+:::
+
+### Conceptual Example
+
+Suppose you want 2 samples per day for 3 days (6 total samples):
+
+- **Days:** 3 (call these day 1, day 2, day 3)
+- **Sampling periods per day:** 2 (morning: 9:15-10:45 AM, afternoon: 1:15-2:45 PM)
+- **Total samples:** 3 days × 2 periods = 6 samples
+
+You'll create:
+- 6 LCG fields (`rand_01` through `rand_06`)
+- 6 "minutes from midnight" fields (`min_from_midnight_d01_s01` through `min_from_midnight_d03_s02`)
+- 6 "delivery time" fields (`deliver_at_d01_s01` through `deliver_at_d03_s02`)
+- 7 events (`enrollment` plus `ema_d01_s01` through `ema_d03_s02`)
+- 6 ASIs (one per EMA event)
+
+## Download Complete Example
+
+Rather than building this project manually, you can download a complete working example:
+
+**Option 1: Import the entire project**
+
+* [Download REDCap Project XML](assets/redcap_automatic_ema_odm.xml) - Import this via **Project Setup** > **Other Functionality** > **Project XML**
+
+::: {.callout-note}
+This project was exported from REDCap 15.6.1. After importing, verify the ASI email addresses and survey settings match your needs.
+:::
+
+**Option 2: Build manually using CSV files**
+
+Download the individual components and upload them:
+
+* [Data Dictionary CSV](assets/data_dictionary.csv) - For **Designer** > **Upload** or **API**
+* [Events CSV](assets/events.csv) - For **Project Setup** > **Define My Events**
+* [Event Mappings CSV](assets/event_mappings.csv) - For **Project Setup** > **Designate Instruments for My Events**
+* [ASI List CSV](assets/asi_list.csv) - For importing Automated Survey Invitations
 
 ## Steps
 
-<!-- TODO: Add detailed implementation steps -->
+### Set Up Core Configuration Fields
 
-### 1. Implement the Pseudo-Random Number Generator
+Create an instrument called `ema_config` to hold your study parameters and random number generator.
 
-This recipe uses a Linear Congruential Generator (LCG), which can be implemented using only calculated fields.
+Add the following fields:
 
-### 2. Create Calculated Fields for Sample Times
+* `ema_start_on`:
+    * Field Type: Text Box
+    * Validation: Date (M-D-Y)
+    * Variable Name: `ema_start_on`
+    * Field Note: "First day of EMA sampling"
+* `seed_input`:
+    * Field Type: Text Box
+    * Validation: Integer
+    * Variable Name: `seed_input`
+    * Action Tags: `@DEFAULT='[record-name]'`
+    * Field Note: "Initial seed value (defaults to record ID)"
+* `seed`:
+    * Field Type: Calculated Field
+    * Variable Name: `seed`
+    * Calculation: `mod((([a] * mod((([a] * mod((([a] * [seed_input]) + [c]), [m])) + [c]), [m])) + [c]), [m])`
+    * Field Note: "Processed seed (runs LCG a few times to avoid similar early values for similar seeds)"
 
-### 3. Upload Events and Event Mappings
+Add constant fields for the LCG parameters:
 
-### 4. Create Your EMA Survey
+* `a`:
+    * Field Type: Calculated Field
+    * Calculation: `1664525`
+* `c`:
+    * Field Type: Calculated Field
+    * Calculation: `1013904223`
+* `m`:
+    * Field Type: Calculated Field
+    * Calculation: `4294967296`
 
-### 5. Upload ASI Configuration
+::: {.callout-note title="Why process the seed?"}
+Similar seed values (like sequential record IDs) produce similar early LCG values. You don't want all your first samples to happen at about the same time of day! Running the LCG a few times on `seed_input` creates much more varied initial random numbers.
+:::
 
-### 6. Test with a Test Record
+Add fields for your sampling periods. For each period, you'll need a start time (minutes from midnight) and duration (in minutes).
 
-## Complete Example
+For example, for two periods per day:
 
-<!-- TODO: Add example with LCG implementation and CSV files -->
+* `period_start_01`:
+    * Field Type: Calculated Field
+    * Calculation: `555` (9:15 AM = 9×60 + 15 = 555 minutes from midnight)
+* `period_len_01`:
+    * Field Type: Calculated Field
+    * Calculation: `90` (90 minutes = 9:15 AM to 10:45 AM)
+* `period_start_02`:
+    * Field Type: Calculated Field
+    * Calculation: `795` (1:15 PM = 13×60 + 15 = 795 minutes from midnight)
+* `period_len_02`:
+    * Field Type: Calculated Field
+    * Calculation: `90` (90 minutes)
 
-## Notes and Tips
+### Generate the Random Number Fields
 
-* The LCG provides pseudo-randomness - not cryptographically secure, but sufficient for EMA sampling
-* Each participant gets a different random sequence based on their record ID or enrollment time
-* You'll need one event per possible sample across the entire study period
-* Consider using seed values based on record ID to ensure reproducible but varied schedules
+For each sample you want to collect, create one LCG field. If you're collecting 6 total samples, you'll create `rand_01` through `rand_06`.
+
+Each field follows this pattern:
+
+* `rand_01`:
+    * Field Type: Calculated Field
+    * Calculation: `mod((([a] * [seed]) + [c]), [m])`
+* `rand_02`:
+    * Field Type: Calculated Field
+    * Calculation: `mod((([a] * [rand_01]) + [c]), [m])`
+* `rand_03`:
+    * Field Type: Calculated Field
+    * Calculation: `mod((([a] * [rand_02]) + [c]), [m])`
+* (continue this pattern...)
+
+::: {.callout-tip title="Use a script"}
+Use Excel, R, or Python to generate the instrument CSV with all these calculated fields. Manually creating hundreds of fields is error-prone. You can also [download the complete data dictionary CSV](assets/data_dictionary.csv) from the example project.
+:::
+
+### Generate the Sample Time Fields
+
+For each sample, create two fields:
+
+1. **Minutes from midnight** for that sample
+2. **Delivery datetime** for that sample
+
+The pattern depends on which period the sample falls into. For a 3-day, 2-samples-per-day study:
+
+**Day 1, Sample 1** (period 1):
+* `min_from_midnight_d01_s01`:
+    * Calculation: `[period_start_01] + mod([rand_01], [period_len_01])`
+* `deliver_at_d01_s01`:
+    * Calculation: `@CALCDATE([ema_start_on], (0 * (24*60)) + [min_from_midnight_d01_s01], 'm')`
+
+**Day 1, Sample 2** (period 2):
+* `min_from_midnight_d01_s02`:
+    * Calculation: `[period_start_02] + mod([rand_02], [period_len_02])`
+* `deliver_at_d01_s02`:
+    * Calculation: `@CALCDATE([ema_start_on], (0 * (24*60)) + [min_from_midnight_d01_s02], 'm')`
+
+::: {.aside}
+The `(0 * (24*60))` term is included so the pattern repeats more easily.
+:::
+
+
+**Day 2, Sample 1** (period 1):
+* `min_from_midnight_d02_s01`:
+    * Calculation: `[period_start_01] + mod([rand_03], [period_len_01])`
+* `deliver_at_d02_s01`:
+    * Calculation: `@CALCDATE([ema_start_on], (1 * (24*60)) + [min_from_midnight_d02_s01], 'm')`
+
+**Day 2, Sample 2** (period 2):
+* `min_from_midnight_d02_s02`:
+    * Calculation: `[period_start_02] + mod([rand_04], [period_len_02])`
+* `deliver_at_d02_s02`:
+    * Calculation: `@CALCDATE([ema_start_on], (1 * (24*60)) + [min_from_midnight_d02_s02], 'm')`
+
+Notice the pattern:
+- The day number multiplier increases: `0 * (24*60)`, `1 * (24*60)`, `2 * (24*60)`, etc.
+- The period alternates: period 1, period 2, period 1, period 2, etc.
+- The random number increments: `rand_01`, `rand_02`, `rand_03`, etc.
+
+::: {.callout-tip title="Generate programmatically"}
+Generate these fields programmatically. The pattern is systematic but error-prone to create manually.
+:::
+
+### Create Your EMA Survey Instrument
+
+* Create an instrument called `ema` with your data collection fields
+* Enable it as a survey
+* Configure survey settings (timeout, completion message, etc.)
+
+### Upload Events
+
+Create one event per sample. Using the CSV file upload in **Project Setup** > **Define My Events** ([download events.csv](assets/events.csv)):
+
+```csv
+event_name,arm_num,day_offset,offset_min,offset_max
+enrollment_arm_1,1,0,0,0
+ema_d01_s01_arm_1,1,0,0,0
+ema_d01_s02_arm_1,1,0,0,0
+ema_d02_s01_arm_1,1,0,0,0
+ema_d02_s02_arm_1,1,0,0,0
+ema_d03_s01_arm_1,1,0,0,0
+ema_d03_s02_arm_1,1,0,0,0
+```
+
+### Map Instruments to Events
+
+Use the CSV upload in **Project Setup** > **Designate Instruments for My Events** ([download event_mappings.csv](assets/event_mappings.csv)):
+
+```csv
+arm_num,unique_event_name,form
+1,enrollment_arm_1,ema_config
+1,ema_d01_s01_arm_1,ema
+1,ema_d01_s02_arm_1,ema
+1,ema_d02_s01_arm_1,ema
+1,ema_d02_s02_arm_1,ema
+1,ema_d03_s01_arm_1,ema
+1,ema_d03_s02_arm_1,ema
+```
+
+::: {.callout-note title="Map config form carefully"}
+The `ema_config` form should only be mapped to the `enrollment` event. This ensures calculations only trigger once when you save that form.
+:::
+
+### Create ASIs for Each Event
+
+For each EMA event, create an ASI via **Designer** > **Automated invitations** for the `ema` instrument, or use the CSV upload feature if your REDCap version supports it.
+
+Each ASI should:
+* **Trigger when:** The `ema_config` form is complete (e.g., `[ema_config_complete] = 2`)
+* **Send at:** The corresponding `deliver_at_dXX_sYY` field
+* **Send to:** `[email]`
+* **How often:** Only once
+* **Expiration:** Set as appropriate (e.g., 2 hours after delivery)
+* **Include the survey link** in the message body
+
+Example for the first sample:
+* **When to send:** At the time specified by a date/time field: `deliver_at_d01_s01`
+* **Ensure conditions are still true:** Check this box
+* **Email body:** Include `[event-url]` or similar piping for the survey link
+
+::: {.callout-tip title="Script ASI generation"}
+Use a script to generate the ASI configuration if your REDCap version supports CSV upload for ASIs. You can also [download the complete ASI list CSV](assets/asi_list.csv) from the example project (remember to update the email address).
+:::
+
+## Testing
+
+* Create a test record
+* Set `ema_start_on` to today or tomorrow
+* Set `seed_input` (or let it default to record ID)
+* Save the `ema_config` form
+* Check that all `deliver_at_dXX_sYY` fields are populated with reasonable datetimes
+* Go to **Designer** > **Survey Distribution Tools** > **Survey Invitation Log** to verify ASIs are scheduled
+
+::: {.callout-tip title="Make everything visible during development"}
+While developing and testing, leave all the calculated fields visible on the `ema_config` survey so you can watch the random numbers and schedule populate in real time. This makes debugging much easier. You can hide them from participants later with `@HIDDEN-SURVEY` once everything works.
+:::
+
+::: {.callout-warning title="Scheduled surveys are sometimes invisible"}
+During the time between when a survey is scheduled and when it is sent, it will not appear in the **Survey Invitation Log**.
+:::
+
+## Notes
+
+* **Calculation limits:** With 500+ calculated fields on a form, save times can exceed 6-10 seconds and may hit server timeouts. Stay well under 500 calculations per form.
+* **Trigger cascade:** Setting `seed_input` or `ema_start_on` triggers all calculations that depend on those fields. Be certain you want to generate the schedule before saving these values.
+* **Seed stability:** If using `[record-name]` as your seed, save it with `@DEFAULT` into `seed_input` so renaming the record doesn't regenerate the schedule.
+* **Similar seeds:** Similar seed values produce similar early LCG values. The processed `seed` field runs the LCG a few times to mitigate this.
+* **Consolidate calculations:** Breaking calculations into steps (like `min_from_midnight_dXX_sYY`) makes debugging easier but is slower. Once tested, you can consolidate into single nested calculations for performance. This is fairly easy if you're generating your fields using R or Python.
+* **Multiple arms:** If your event list is too cluttered, you can put EMA events in a separate arm. ASIs won't trigger until the participant has a record in that arm, so redirect them through the EMA arm somewhere in your enrollment flow (use **Survey Settings** > **Redirect to a URL**). REDCap will warn about participants in multiple arms, but this is not a problem.
+* **Extracting additional random values:** If you need more than 100 random numbers and hit calculation limits, you can extract multiple values from each LCG output. For example, `mod([rand_01], 256)` gives a value 0-255, and `mod(floor([rand_01] / 256), 256)` gives another independent 0-255 value. But this adds complexity. Don't do it unless necessary.
+* **Computing additional things:** You can also split calculations across multiple instruments (or page sections) if needed. Again, don't do this unless you need to.
+* **Non-constant samples per day:** You can have different numbers of samples per day, but it makes the field generation script more complex.
+* **Repeating events:** This approach doesn't work with repeating events. The event-per-sample architecture is required for ASIs to work correctly.
+* **Alerts instead of Events:** An alternate design would be to use one Alert per sample instead of one Event per sample. The main drawbacks here are that you can't use survey tools (reminders, expiration) and that you can't hide the UI clutter for Alerts like you can with Events.
+
+## Performance Considerations
+
+With many calculated fields:
+
+* Form saves can take 6+ seconds with 500 calculations
+* Don't generate the schedule until you're ready to start EMA sampling
+* Test your design before going live
 
 ## Troubleshooting
 
-**Problem:** Random times are too close together or overlapping
+### Calculations aren't populating
 
-**Solution:** Adjust your sampling windows to be mutually exclusive, or add logic to calculated fields to enforce minimum spacing
+* Verify the field dependencies are correct (each `rand_XX` depends on the previous one)
+* Check for typos in field names
+* Ensure `seed_input` and `ema_start_on` are filled
+* Try saving the `ema_config` form again
+* If you have more than 100 LCG fields (`rand_01` through `rand_100+`) on a form that's not currently visible (e.g., on a different instrument from where you're triggering the calculation), only the first ~100 will calculate. Keep your calculated fields on a visible survey or form, or use the technique in **Extracting more random values** above
 
-**Problem:** Too many events to manage
+### ASIs aren't scheduling
 
-**Solution:** Consider the [flexible approach](../random_flexible/) instead, which doesn't require pre-defining all events
+* Verify the ASI condition logic evaluates to true
+* Check that `deliver_at_dXX_sYY` fields contain valid datetimes
+* Confirm the ASI is enabled and saved
+* Check **Designer** > **Survey Distribution Tools** > **Survey Invitation Log**
+
+### Random times are invalid or outside periods
+
+* Verify `period_start_XX` and `period_len_XX` values are correct
+* Check that the LCG fields are producing reasonable values (should be large positive integers)
+* Verify the modulo operations in `min_from_midnight_dXX_sYY` fields
+
+### Forms are saving very slowly
+
+* Count your calculated fields—you may have too many
+* Consider consolidating calculations
+* Consider the [flexible approach](../random_flexible/) instead
 
 ## Related Resources
 
 * [Back to EMA Overview](../)
-* [Linear Congruential Generator (Wikipedia)](https://en.wikipedia.org/wiki/Linear_congruential_generator)
+* [EMA: Random Schedule (Flexible)](../random_flexible/) - Better for >100 samples or schedules that need adjustment
 * [Stopping Alerts and ASIs](../../stopping_alerts_asis/)

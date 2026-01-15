@@ -1,0 +1,8 @@
+event_name,arm_num,unique_event_name,custom_event_label
+enrollment,1,enrollment_arm_1,
+ema_d01_s01,1,ema_d01_s01_arm_1,
+ema_d01_s02,1,ema_d01_s02_arm_1,
+ema_d02_s01,1,ema_d02_s01_arm_1,
+ema_d02_s02,1,ema_d02_s02_arm_1,
+ema_d03_s01,1,ema_d03_s01_arm_1,
+ema_d03_s02,1,ema_d03_s02_arm_1,
