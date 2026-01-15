@@ -16,7 +16,7 @@ categories: [ema, survey, scheduling, asi, calculated-fields]
 
 We're using a [Linear Congruential Generator](https://en.wikipedia.org/wiki/Linear_congruential_generator) (LCG): a pseudo-random number generator we chose because it's straightforward to build with the tools REDCap gives you.
 
-This generator relies on four parameters: A _multiplier_ `a`, an _increment_ `c`, a _modulus_ `m`, and an _starting value_ `seed`. It uses a chained operation -- every time we generate a new value, we use the previous value as the seed. See the Wikipedia page for more details.
+This generator relies on four parameters: A _multiplier_ `a`, an _increment_ `c`, a _modulus_ `m`, and a _starting value_ `seed`. It uses a chained operation -- every time we generate a new value, we use the previous value as the seed. See the Wikipedia page for more details.
 :::
 
 ## Prerequisites
@@ -36,7 +36,7 @@ This approach works well when:
 - You want everything self-contained in REDCap (no external scheduling or API)
 - You're willing to invest significant upfront setup effort
 - You can define explicit sampling periods (e.g., 9:15-10:45 AM, 11:15-12:45 PM, 1:15-2:45 PM)
-- Your total number of samples is bounded and not immense -- things get tricker if you need to exceed about 100 samples.
+- Your total number of samples is bounded and not immense — things get trickier if you need to exceed about 100 samples.
 
 See the [EMA overview](../) for other approaches.
 
@@ -71,7 +71,7 @@ This approach uses three key techniques:
 2. **Time window mapping:** Each sampling period (e.g., "morning slot") has a start time and duration. The generated numbers are used to pick a time within each period.
 3. **Event-per-sample architecture:** Each potential sample gets its own event with an ASI that triggers at the calculated time.
 
-::: {.aside title="Why so many events?"}
+::: {.aside}
 ##### Why so many events?
 
 For some designs, it might be possible to do this with repeating instruments. There are some tricky bugs to figure out, though. This approach is bulky but reliable.
@@ -108,10 +108,10 @@ This project was exported from REDCap 15.6.1. After importing, verify the ASI em
 
 Download the individual components and upload them:
 
-* [Data Dictionary CSV](assets/data_dictionary.csv) - For **Designer** > **Upload** or **API**
-* [Events CSV](assets/events.csv) - For **Project Setup** > **Define My Events**
-* [Event Mappings CSV](assets/event_mappings.csv) - For **Project Setup** > **Designate Instruments for My Events**
-* [ASI List CSV](assets/asi_list.csv) - For importing Automated Survey Invitations
+* [Data Dictionary CSV](assets/data_dictionary.csv) - For **Designer** > **Data Dictionary** > **Upload your Data Dictionary file**
+* [Events CSV](assets/events.csv) - For **Events** > **Define My Events**
+* [Event Mappings CSV](assets/event_mappings.csv) - For **Events** > **Designate Instruments for My Events**
+* [ASI List CSV](assets/asi_list.csv) - For **Designer** > **Auto Invitation options** > **Upload...**
 
 ## Steps
 
@@ -322,7 +322,6 @@ During the time between when a survey is scheduled and when it is sent, it will 
 * **Calculation limits:** With 500+ calculated fields on a form, save times can exceed 6-10 seconds and may hit server timeouts. Stay well under 500 calculations per form.
 * **Trigger cascade:** Setting `seed_input` or `ema_start_on` triggers all calculations that depend on those fields. Be certain you want to generate the schedule before saving these values.
 * **Seed stability:** If using `[record-name]` as your seed, save it with `@DEFAULT` into `seed_input` so renaming the record doesn't regenerate the schedule.
-* **Similar seeds:** Similar seed values produce similar early LCG values. The processed `seed` field runs the LCG a few times to mitigate this.
 * **Consolidate calculations:** Breaking calculations into steps (like `min_from_midnight_dXX_sYY`) makes debugging easier but is slower. Once tested, you can consolidate into single nested calculations for performance. This is fairly easy if you're generating your fields using R or Python.
 * **Multiple arms:** If your event list is too cluttered, you can put EMA events in a separate arm. ASIs won't trigger until the participant has a record in that arm, so redirect them through the EMA arm somewhere in your enrollment flow (use **Survey Settings** > **Redirect to a URL**). REDCap will warn about participants in multiple arms, but this is not a problem.
 * **Extracting additional random values:** If you need more than 100 random numbers and hit calculation limits, you can extract multiple values from each LCG output. For example, `mod([rand_01], 256)` gives a value 0-255, and `mod(floor([rand_01] / 256), 256)` gives another independent 0-255 value. But this adds complexity. Don't do it unless necessary.
@@ -347,7 +346,7 @@ With many calculated fields:
 * Check for typos in field names
 * Ensure `seed_input` and `ema_start_on` are filled
 * Try saving the `ema_config` form again
-* If you have more than 100 LCG fields (`rand_01` through `rand_100+`) on a form that's not currently visible (e.g., on a different instrument from where you're triggering the calculation), only the first ~100 will calculate. Keep your calculated fields on a visible survey or form, or use the technique in **Extracting more random values** above
+* If you have more than 100 LCG fields (`rand_01` through `rand_100+`) on a form that's not currently visible (e.g., on a different instrument from where you're triggering the calculation), only the first ~100 will calculate. Keep your calculated fields on a visible survey or form, or use the technique in **Extracting additional random values** above
 
 ### ASIs aren't scheduling
 
