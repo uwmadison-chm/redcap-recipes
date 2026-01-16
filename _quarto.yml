@@ -35,6 +35,7 @@ website:
               - recipes/ema/index.qmd
               - recipes/ema/fixed_schedule/index.qmd
               - recipes/ema/random_automatic/index.qmd
+              - recipes/ema/random_automatic/builder/index.qmd
               - recipes/ema/random_flexible/index.qmd
 
   page-footer:
