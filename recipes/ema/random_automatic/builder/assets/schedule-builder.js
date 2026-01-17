@@ -7,6 +7,157 @@ const LCG_A = "1664525";
 const LCG_C = "1013904223";
 const LCG_M = "4294967296";
 
+// LCG as numbers for simulation
+const LCG_A_NUM = 1664525;
+const LCG_C_NUM = 1013904223;
+const LCG_M_NUM = 4294967296;
+
+// LCG function: returns next value in sequence
+function lcgNext(current) {
+  return (LCG_A_NUM * current + LCG_C_NUM) % LCG_M_NUM;
+}
+
+// Run Monte Carlo simulation and return array of {time, windowIdx} objects
+function runMonteCarloSimulation(numRuns = 10000) {
+  const { windows, numDays, dayJitter } = state;
+  if (windows.length === 0) return [];
+
+  const jitterRange = dayJitter * 2;
+  const allSamples = [];
+
+  for (let run = 0; run < numRuns; run++) {
+    // Start with a random seed for each run
+    let rand = Math.floor(Math.random() * LCG_M_NUM);
+
+    // Warm up the LCG (like the real implementation does with seed processing)
+    rand = lcgNext(rand);
+    rand = lcgNext(rand);
+    rand = lcgNext(rand);
+
+    for (let day = 0; day < numDays; day++) {
+      // Generate day jitter offset (if jitter enabled)
+      let dayJitterOffset = 0;
+      if (dayJitter > 0) {
+        rand = lcgNext(rand);
+        dayJitterOffset = (rand % jitterRange) - dayJitter;
+      }
+
+      // Generate sample time for each window
+      windows.forEach((window, windowIdx) => {
+        rand = lcgNext(rand);
+        const windowStart = window.startHour * 60 + window.startMin;
+        const sampleOffset = rand % window.duration;
+        const sampleTime = windowStart + dayJitterOffset + sampleOffset;
+        allSamples.push({ time: sampleTime, windowIdx });
+      });
+    }
+  }
+
+  return allSamples;
+}
+
+// Render histogram of sample times with stacked bars by window
+function renderHistogram() {
+  const container = document.getElementById("histogram-container");
+  if (!container) return;
+
+  if (state.windows.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const samples = runMonteCarloSimulation(10000);
+  if (samples.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  // Same color palette as timeline
+  const colors = ["#4e79a7", "#59a14f", "#edc949", "#e15759", "#76b7b2", "#f28e2b"];
+
+  // Histogram settings - use same dynamic bounds as timeline
+  const binSize = 5; // 5-minute bins
+  const { startMin: dayStartMin, endMin: dayEndMin, startHour: dayStartHour, endHour: dayEndHour } = getTimeBounds();
+
+  // Create bins per window
+  const numBins = Math.ceil((dayEndMin - dayStartMin) / binSize);
+  const numWindows = state.windows.length;
+  const binsByWindow = Array.from({ length: numWindows }, () => new Array(numBins).fill(0));
+
+  // Fill bins by window
+  for (const { time, windowIdx } of samples) {
+    const binIdx = Math.floor((time - dayStartMin) / binSize);
+    if (binIdx >= 0 && binIdx < numBins) {
+      binsByWindow[windowIdx][binIdx]++;
+    }
+  }
+
+  // Calculate total per bin for stacking
+  const binTotals = new Array(numBins).fill(0);
+  for (let b = 0; b < numBins; b++) {
+    for (let w = 0; w < numWindows; w++) {
+      binTotals[b] += binsByWindow[w][b];
+    }
+  }
+  const maxCount = Math.max(...binTotals);
+
+  // SVG dimensions
+  const width = 700;
+  const height = 100;
+  const margin = { left: 45, right: 15, top: 15, bottom: 25 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const barWidth = chartWidth / numBins;
+
+  // Build SVG
+  let svg = `<svg width="100%" viewBox="0 0 ${width} ${height}" style="max-width: ${width}px; font-family: system-ui, sans-serif; font-size: 11px;">`;
+
+  // Y-axis label
+  svg += `<text x="12" y="${margin.top + chartHeight / 2}" text-anchor="middle" transform="rotate(-90, 12, ${margin.top + chartHeight / 2})" fill="#666" font-size="10">Frequency</text>`;
+
+  // Stacked bars
+  for (let b = 0; b < numBins; b++) {
+    if (binTotals[b] === 0) continue;
+
+    const x = margin.left + b * barWidth;
+    let yOffset = 0;
+
+    // Draw each window's contribution as a stacked segment
+    for (let w = 0; w < numWindows; w++) {
+      const count = binsByWindow[w][b];
+      if (count === 0) continue;
+
+      const segmentHeight = (count / maxCount) * chartHeight;
+      const y = margin.top + chartHeight - yOffset - segmentHeight;
+      const color = colors[w % colors.length];
+
+      svg += `<rect x="${x}" y="${y}" width="${barWidth - 0.5}" height="${segmentHeight}" fill="${color}"/>`;
+      yOffset += segmentHeight;
+    }
+  }
+
+  // Time axis
+  const axisY = margin.top + chartHeight + 15;
+  for (let hour = dayStartHour; hour <= dayEndHour; hour += 2) {
+    const x = margin.left + ((hour * 60 - dayStartMin) / (dayEndMin - dayStartMin)) * chartWidth;
+    const label = formatHourLabel(hour);
+    svg += `<line x1="${x}" y1="${margin.top + chartHeight}" x2="${x}" y2="${margin.top + chartHeight + 4}" stroke="#999"/>`;
+    svg += `<text x="${x}" y="${axisY}" text-anchor="middle" fill="#666">${label}</text>`;
+  }
+
+  // Bottom border
+  svg += `<line x1="${margin.left}" y1="${margin.top + chartHeight}" x2="${margin.left + chartWidth}" y2="${margin.top + chartHeight}" stroke="#ccc"/>`;
+
+  svg += `</svg>`;
+
+  container.innerHTML = `
+    <div class="text-muted mb-1" style="font-size: 0.85em;">
+      <strong>Simulated sample distribution</strong> (10,000 runs × ${state.numDays} days × ${state.windows.length} windows = ${samples.length.toLocaleString()} samples)
+    </div>
+    ${svg}
+  `;
+}
+
 // ============================================================================
 // STATE
 // ============================================================================
@@ -310,6 +461,44 @@ function formatTimeFromHourMin(hour, min) {
 // UI RENDERING
 // ============================================================================
 
+// Format hour label, handling times past midnight
+function formatHourLabel(hour) {
+  // Normalize to 0-23 range (handles negative hours and hours >= 24)
+  const normalizedHour = ((hour % 24) + 24) % 24;
+  if (normalizedHour === 0) return "12a";
+  if (normalizedHour === 12) return "12p";
+  if (normalizedHour > 12) return `${normalizedHour - 12}p`;
+  return `${normalizedHour}a`;
+}
+
+// Calculate dynamic time bounds based on windows (with ~1 hour padding, on hour boundaries)
+function getTimeBounds() {
+  const { windows, dayJitter } = state;
+  if (windows.length === 0) return { startMin: 6 * 60, endMin: 23 * 60 };
+
+  let earliest = Infinity;
+  let latest = -Infinity;
+
+  for (const w of windows) {
+    const start = w.startHour * 60 + w.startMin;
+    const end = start + w.duration;
+    // Account for jitter
+    earliest = Math.min(earliest, start - dayJitter);
+    latest = Math.max(latest, end + dayJitter);
+  }
+
+  // Round to hour boundaries with ~1 hour padding
+  const startHour = Math.floor(earliest / 60) - 1;
+  const endHour = Math.ceil(latest / 60) + 1;
+
+  return {
+    startMin: startHour * 60,
+    endMin: endHour * 60,
+    startHour,
+    endHour
+  };
+}
+
 function renderTimeline() {
   const container = document.getElementById("timeline-container");
   if (!container) return;
@@ -319,11 +508,8 @@ function renderTimeline() {
     return;
   }
 
-  // Timeline settings
-  const dayStartHour = 6;  // 6 AM
-  const dayEndHour = 23;   // 11 PM
-  const dayStartMin = dayStartHour * 60;
-  const dayEndMin = dayEndHour * 60;
+  // Dynamic timeline bounds
+  const { startMin: dayStartMin, endMin: dayEndMin, startHour: dayStartHour, endHour: dayEndHour } = getTimeBounds();
   const dayDuration = dayEndMin - dayStartMin;
 
   const width = 700;
@@ -436,7 +622,7 @@ function renderTimeline() {
   const axisY = trackY + trackHeight + 15;
   for (let hour = dayStartHour; hour <= dayEndHour; hour += 2) {
     const x = minToX(hour * 60);
-    const label = hour === 12 ? "12p" : hour > 12 ? `${hour - 12}p` : `${hour}a`;
+    const label = formatHourLabel(hour);
     svg += `<line x1="${x}" y1="${trackY + trackHeight}" x2="${x}" y2="${trackY + trackHeight + 4}" stroke="#999"/>`;
     svg += `<text x="${x}" y="${axisY}" text-anchor="middle" fill="#666">${label}</text>`;
   }
@@ -529,8 +715,9 @@ function renderWindows() {
     });
   });
 
-  // Update timeline visualization
+  // Update visualizations
   renderTimeline();
+  renderHistogram();
 }
 
 function renderSamples() {
@@ -845,7 +1032,11 @@ function bindFormInput(elementId, stateKey, transform = v => v) {
     }
     if (stateKey === "dayJitter") {
       renderTimeline();
+      renderHistogram();
       renderSamples();
+    }
+    if (stateKey === "numDays") {
+      renderHistogram();
     }
   });
 }

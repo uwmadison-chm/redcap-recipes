@@ -136,6 +136,8 @@ Define the time windows during which samples can be scheduled. Each window produ
 
 <div id="timeline-container" class="my-3"></div>
 
+<div id="histogram-container" class="my-3"></div>
+
 <button id="add-window-btn" class="btn btn-outline-primary me-2">Add Window</button>
 
 <button id="generate-btn" class="btn btn-primary">Generate Schedule</button>
