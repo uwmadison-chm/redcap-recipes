@@ -12,9 +12,12 @@ const LCG_M = "4294967296";
 // ============================================================================
 
 const state = {
-  periods: [
-    { id: 1, startHour: 9, startMin: 15, duration: 90 },
-    { id: 2, startHour: 13, startMin: 15, duration: 90 }
+  // 4 windows: 9:15-11:45, 12:15-2:45, 3:15-5:45, 6:15-8:45 (150 min each, 30 min gaps)
+  windows: [
+    { id: 1, startHour: 9, startMin: 15, duration: 150 },
+    { id: 2, startHour: 12, startMin: 15, duration: 150 },
+    { id: 3, startHour: 15, startMin: 15, duration: 150 },
+    { id: 4, startHour: 18, startMin: 15, duration: 150 }
   ],
   samples: [],
   parsedProject: null,
@@ -37,7 +40,7 @@ const state = {
   asiSubject: "EMA Survey: [event-name]",
   asiBody: "<p>Please complete your EMA survey:</p>\n<p>[survey-link]</p>",
   numDays: 7,
-  samplesPerDay: 2
+  dayJitter: 15  // ±15 minutes
 };
 
 // ============================================================================
@@ -46,7 +49,7 @@ const state = {
 
 function generateDataDictionary() {
   const { samples, configForm, startField, randPrefix, seedField,
-    deliverAtPrefix, fieldNameA, fieldNameC, fieldNameM, asiSurveyForm } = state;
+    deliverAtPrefix, fieldNameA, fieldNameC, fieldNameM, asiSurveyForm, dayJitter, numDays } = state;
 
   const headers = [
     "Variable / Field Name", "Form Name", "Section Header", "Field Type", "Field Label",
@@ -79,10 +82,45 @@ function generateDataDictionary() {
     "", "", "", "", "", "", "", "", "", "", "", "@HIDDEN"
   ]);
 
-  // Random number fields
+  // Track where random number chain starts from
+  let lastRandField = "seed";
+
+  // Day jitter fields (if jitter is enabled)
+  // dayJitter is stored as ± value, so total range is 2 * dayJitter
+  if (dayJitter > 0) {
+    const jitterRange = dayJitter * 2;
+
+    // Generate one jitter random number per day
+    for (let day = 1; day <= numDays; day++) {
+      const dayPadded = String(day).padStart(2, '0');
+      const jitterRandField = `${randPrefix}_jitter_d${dayPadded}`;
+      rows.push([
+        jitterRandField, configForm, day === 1 ? "Day Jitter Random Numbers" : "", "calc",
+        `Jitter Random Day ${dayPadded}`,
+        `mod((([${fieldNameA}] * [${lastRandField}]) + [${fieldNameC}]), [${fieldNameM}])`,
+        "", "", "", "", "", "", "", "", "", "", "", "@HIDDEN"
+      ]);
+      lastRandField = jitterRandField;
+    }
+
+    // Generate jitter offset calc fields (one per day)
+    for (let day = 1; day <= numDays; day++) {
+      const dayPadded = String(day).padStart(2, '0');
+      const jitterRandField = `${randPrefix}_jitter_d${dayPadded}`;
+      const jitterOffsetField = `jitter_offset_d${dayPadded}`;
+      rows.push([
+        jitterOffsetField, configForm, day === 1 ? "Day Jitter Offsets" : "", "calc",
+        `Jitter Offset Day ${dayPadded}`,
+        `mod([${jitterRandField}], ${jitterRange}) - ${dayJitter}`,
+        "", "", "", "", "", "", "", "", "", "", "", "@HIDDEN"
+      ]);
+    }
+  }
+
+  // Random number fields for samples (chain continues from last jitter field or seed)
   samples.forEach((sample, idx) => {
     const randField = `${randPrefix}_${String(idx + 1).padStart(2, '0')}`;
-    const prevField = idx === 0 ? "seed" : `${randPrefix}_${String(idx).padStart(2, '0')}`;
+    const prevField = idx === 0 ? lastRandField : `${randPrefix}_${String(idx).padStart(2, '0')}`;
     rows.push([
       randField, configForm, idx === 0 ? "Random Numbers" : "", "calc",
       `Random ${String(idx + 1).padStart(2, '0')}`,
@@ -98,7 +136,15 @@ function generateDataDictionary() {
     const fieldName = `${deliverAtPrefix}_d${dayPadded}_s${samplePadded}`;
     const randField = `${randPrefix}_${String(idx + 1).padStart(2, '0')}`;
     const dayOffset = sample.day - 1;
-    const calcAnnotation = `@CALCDATE([${startField}], (${dayOffset} * 1440) + ${sample.startMinutes} + mod([${randField}], ${sample.duration}), 'm')`;
+
+    // Include jitter offset if enabled
+    let calcAnnotation;
+    if (dayJitter > 0) {
+      const jitterOffsetField = `jitter_offset_d${dayPadded}`;
+      calcAnnotation = `@CALCDATE([${startField}], (${dayOffset} * 1440) + ${sample.startMinutes} + [${jitterOffsetField}] + mod([${randField}], ${sample.duration}), 'm')`;
+    } else {
+      calcAnnotation = `@CALCDATE([${startField}], (${dayOffset} * 1440) + ${sample.startMinutes} + mod([${randField}], ${sample.duration}), 'm')`;
+    }
 
     rows.push([
       fieldName, configForm, idx === 0 ? "EMA Schedule" : "", "text",
@@ -264,8 +310,156 @@ function formatTimeFromHourMin(hour, min) {
 // UI RENDERING
 // ============================================================================
 
-function renderPeriods() {
-  const container = document.getElementById("periods-container");
+function renderTimeline() {
+  const container = document.getElementById("timeline-container");
+  if (!container) return;
+
+  if (state.windows.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  // Timeline settings
+  const dayStartHour = 6;  // 6 AM
+  const dayEndHour = 23;   // 11 PM
+  const dayStartMin = dayStartHour * 60;
+  const dayEndMin = dayEndHour * 60;
+  const dayDuration = dayEndMin - dayStartMin;
+
+  const width = 700;
+  const height = 80;
+  const margin = { left: 45, right: 15, top: 25, bottom: 25 };
+  const trackHeight = 30;
+  const trackY = margin.top;
+
+  // Convert minutes to x position
+  const minToX = (min) => {
+    const clamped = Math.max(dayStartMin, Math.min(dayEndMin, min));
+    return margin.left + ((clamped - dayStartMin) / dayDuration) * (width - margin.left - margin.right);
+  };
+
+  // Build window data with jitter
+  const jitter = state.dayJitter;
+  const windowData = state.windows.map((w, idx) => {
+    const start = w.startHour * 60 + w.startMin;
+    const end = start + w.duration;
+    return {
+      idx,
+      start,
+      end,
+      jitterStart: start - jitter,
+      jitterEnd: end + jitter
+    };
+  }).sort((a, b) => a.start - b.start);
+
+  // Find dead zones and overlaps
+  const issues = [];
+  for (let i = 0; i < windowData.length - 1; i++) {
+    const current = windowData[i];
+    const next = windowData[i + 1];
+
+    // Check for overlap (using jittered bounds)
+    if (current.jitterEnd > next.jitterStart) {
+      issues.push({
+        type: "overlap",
+        start: next.jitterStart,
+        end: current.jitterEnd
+      });
+    }
+    // Check for dead zone (gap not covered by jitter)
+    else if (current.jitterEnd < next.jitterStart) {
+      issues.push({
+        type: "deadzone",
+        start: current.jitterEnd,
+        end: next.jitterStart
+      });
+    }
+  }
+
+  // Color palette for windows
+  const colors = ["#4e79a7", "#59a14f", "#edc949", "#e15759", "#76b7b2", "#f28e2b"];
+
+  // Build SVG
+  let svg = `<svg width="100%" viewBox="0 0 ${width} ${height}" style="max-width: ${width}px; font-family: system-ui, sans-serif; font-size: 11px;">`;
+
+  // Background track
+  svg += `<rect x="${margin.left}" y="${trackY}" width="${width - margin.left - margin.right}" height="${trackHeight}" fill="#f0f0f0" rx="3"/>`;
+
+  // Dead zones (red, behind windows)
+  issues.filter(i => i.type === "deadzone").forEach(issue => {
+    const x1 = minToX(issue.start);
+    const x2 = minToX(issue.end);
+    svg += `<rect x="${x1}" y="${trackY}" width="${x2 - x1}" height="${trackHeight}" fill="#ffcccc" stroke="#ff6666" stroke-width="1" stroke-dasharray="3,2"/>`;
+  });
+
+  // Jitter extensions (lighter, behind main windows)
+  if (jitter > 0) {
+    windowData.forEach((w, i) => {
+      const color = colors[i % colors.length];
+      // Left jitter extension
+      const jx1 = minToX(w.jitterStart);
+      const x1 = minToX(w.start);
+      if (jx1 < x1) {
+        svg += `<rect x="${jx1}" y="${trackY}" width="${x1 - jx1}" height="${trackHeight}" fill="${color}" opacity="0.25"/>`;
+      }
+      // Right jitter extension
+      const x2 = minToX(w.end);
+      const jx2 = minToX(w.jitterEnd);
+      if (jx2 > x2) {
+        svg += `<rect x="${x2}" y="${trackY}" width="${jx2 - x2}" height="${trackHeight}" fill="${color}" opacity="0.25"/>`;
+      }
+    });
+  }
+
+  // Main windows
+  windowData.forEach((w, i) => {
+    const x1 = minToX(w.start);
+    const x2 = minToX(w.end);
+    const color = colors[i % colors.length];
+    svg += `<rect x="${x1}" y="${trackY}" width="${x2 - x1}" height="${trackHeight}" fill="${color}" rx="2"/>`;
+    // Window number label
+    const cx = (x1 + x2) / 2;
+    svg += `<text x="${cx}" y="${trackY + trackHeight/2 + 4}" text-anchor="middle" fill="white" font-weight="bold">${w.idx + 1}</text>`;
+  });
+
+  // Overlap indicators (on top)
+  issues.filter(i => i.type === "overlap").forEach(issue => {
+    const x1 = minToX(issue.start);
+    const x2 = minToX(issue.end);
+    svg += `<rect x="${x1}" y="${trackY}" width="${x2 - x1}" height="${trackHeight}" fill="none" stroke="#cc0000" stroke-width="2"/>`;
+    // Hatching pattern for overlap
+    svg += `<pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6"><path d="M0,6 L6,0" stroke="#cc0000" stroke-width="1"/></pattern>`;
+    svg += `<rect x="${x1}" y="${trackY}" width="${x2 - x1}" height="${trackHeight}" fill="url(#hatch)"/>`;
+  });
+
+  // Time axis
+  const axisY = trackY + trackHeight + 15;
+  for (let hour = dayStartHour; hour <= dayEndHour; hour += 2) {
+    const x = minToX(hour * 60);
+    const label = hour === 12 ? "12p" : hour > 12 ? `${hour - 12}p` : `${hour}a`;
+    svg += `<line x1="${x}" y1="${trackY + trackHeight}" x2="${x}" y2="${trackY + trackHeight + 4}" stroke="#999"/>`;
+    svg += `<text x="${x}" y="${axisY}" text-anchor="middle" fill="#666">${label}</text>`;
+  }
+
+  // Legend
+  let legendHtml = "";
+  if (issues.some(i => i.type === "deadzone")) {
+    legendHtml += `<span style="color: #cc4444; font-size: 0.85em;">⚠ Dead zone detected</span> `;
+  }
+  if (issues.some(i => i.type === "overlap")) {
+    legendHtml += `<span style="color: #cc0000; font-size: 0.85em;">⚠ Overlap detected</span> `;
+  }
+  if (jitter > 0 && issues.length === 0) {
+    legendHtml += `<span style="color: #666; font-size: 0.85em;">✓ Full coverage with jitter</span>`;
+  }
+
+  svg += `</svg>`;
+
+  container.innerHTML = svg + (legendHtml ? `<div class="mt-1">${legendHtml}</div>` : "");
+}
+
+function renderWindows() {
+  const container = document.getElementById("windows-container");
   if (!container) return;
 
   container.innerHTML = `
@@ -279,15 +473,15 @@ function renderPeriods() {
           <th></th>
         </tr>
       </thead>
-      <tbody id="periods-tbody"></tbody>
+      <tbody id="windows-tbody"></tbody>
     </table>
   `;
 
-  const tbody = document.getElementById("periods-tbody");
+  const tbody = document.getElementById("windows-tbody");
 
-  state.periods.forEach((period, idx) => {
-    const startMinutes = period.startHour * 60 + period.startMin;
-    const endMinutes = startMinutes + period.duration;
+  state.windows.forEach((window, idx) => {
+    const startMinutes = window.startHour * 60 + window.startMin;
+    const endMinutes = startMinutes + window.duration;
     const endHour = Math.floor(endMinutes / 60);
     const endMin = endMinutes % 60;
 
@@ -297,43 +491,46 @@ function renderPeriods() {
       <td>
         <div style="display: flex; align-items: center; gap: 4px;">
           <input type="number" class="form-control form-control-sm" style="width: 65px"
-            value="${period.startHour}" min="0" max="23" data-idx="${idx}" data-field="startHour">
+            value="${window.startHour}" min="0" max="23" data-idx="${idx}" data-field="startHour">
           <span>:</span>
           <input type="number" class="form-control form-control-sm" style="width: 65px"
-            value="${period.startMin}" min="0" max="59" step="5" data-idx="${idx}" data-field="startMin">
+            value="${window.startMin}" min="0" max="59" step="5" data-idx="${idx}" data-field="startMin">
         </div>
       </td>
       <td>
         <input type="number" class="form-control form-control-sm" style="width: 80px"
-          value="${period.duration}" min="1" data-idx="${idx}" data-field="duration"> min
+          value="${window.duration}" min="1" data-idx="${idx}" data-field="duration"> min
       </td>
       <td class="text-muted">${formatTimeFromHourMin(endHour, endMin)}</td>
       <td>
-        <button class="btn btn-outline-danger btn-sm remove-period-btn" data-idx="${idx}" title="Remove period">&times;</button>
+        <button class="btn btn-outline-danger btn-sm remove-window-btn" data-idx="${idx}" title="Remove window">&times;</button>
       </td>
     `;
 
     tbody.appendChild(row);
   });
 
-  // Wire up event listeners for period inputs
+  // Wire up event listeners for window inputs
   tbody.querySelectorAll("input").forEach(input => {
     input.addEventListener("change", () => {
       const idx = parseInt(input.dataset.idx);
       const field = input.dataset.field;
-      state.periods[idx][field] = parseInt(input.value) || 0;
-      renderPeriods();
+      state.windows[idx][field] = parseInt(input.value) || 0;
+      renderWindows();
     });
   });
 
   // Wire up remove buttons
-  tbody.querySelectorAll(".remove-period-btn").forEach(btn => {
+  tbody.querySelectorAll(".remove-window-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const idx = parseInt(btn.dataset.idx);
-      state.periods.splice(idx, 1);
-      renderPeriods();
+      state.windows.splice(idx, 1);
+      renderWindows();
     });
   });
+
+  // Update timeline visualization
+  renderTimeline();
 }
 
 function renderSamples() {
@@ -341,12 +538,18 @@ function renderSamples() {
   if (!container) return;
 
   if (state.samples.length === 0) {
-    container.innerHTML = `<p class="text-muted">No samples defined yet. Use Generate Schedule above or import a project XML.</p>`;
+    container.innerHTML = `<p class="text-muted">No samples defined yet. Click "Generate Schedule" above or import a project XML.</p>`;
     renderDownloads();
     return;
   }
 
   const totalDays = Math.max(...state.samples.map(s => s.day));
+  const hasJitter = state.dayJitter > 0;
+
+  let summaryHtml = `<p class="text-muted"><strong>${state.samples.length}</strong> samples across <strong>${totalDays}</strong> days</p>`;
+  if (hasJitter) {
+    summaryHtml += `<p class="text-muted">Day jitter: ±${state.dayJitter} minutes (windows shift randomly each day)</p>`;
+  }
 
   container.innerHTML = `
     <table class="table table-sm table-hover">
@@ -355,13 +558,14 @@ function renderSamples() {
           <th>Day</th>
           <th>Sample</th>
           <th>Field Name</th>
-          <th>Window</th>
+          <th>Window${hasJitter ? ' (base)' : ''}</th>
+          ${hasJitter ? '<th>With Jitter</th>' : ''}
           <th></th>
         </tr>
       </thead>
       <tbody id="samples-tbody"></tbody>
     </table>
-    <p class="text-muted"><strong>${state.samples.length}</strong> samples across <strong>${totalDays}</strong> days</p>
+    ${summaryHtml}
   `;
 
   const tbody = document.getElementById("samples-tbody");
@@ -372,12 +576,20 @@ function renderSamples() {
     const fieldName = `${state.deliverAtPrefix}_d${dayPadded}_s${samplePadded}`;
     const endMinutes = sample.startMinutes + sample.duration;
 
+    let jitterCol = '';
+    if (hasJitter) {
+      const jitterStart = sample.startMinutes - state.dayJitter;
+      const jitterEnd = endMinutes + state.dayJitter;
+      jitterCol = `<td class="text-muted">${formatTime(jitterStart)} – ${formatTime(jitterEnd)}</td>`;
+    }
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${sample.day}</td>
       <td>${sample.sample}</td>
       <td><code style="font-size: 0.85em;">${fieldName}</code></td>
       <td class="text-muted">${formatTime(sample.startMinutes)} – ${formatTime(endMinutes)}</td>
+      ${jitterCol}
       <td>
         <button class="btn btn-outline-danger btn-sm remove-sample-btn" data-idx="${idx}" title="Remove sample">&times;</button>
       </td>
@@ -558,7 +770,7 @@ function handleXmlImport(file) {
           id: idx + 1,
           day,
           sample,
-          periodIdx: (sample - 1) % 10, // rough guess
+          windowIdx: (sample - 1) % 10, // rough guess
           startMinutes,
           duration
         });
@@ -582,28 +794,36 @@ function handleGenerateSchedule() {
   let sampleNum = 1;
 
   for (let day = 1; day <= state.numDays; day++) {
-    for (let s = 1; s <= state.samplesPerDay; s++) {
-      const periodIdx = (s - 1) % state.periods.length;
-      const period = state.periods[periodIdx];
+    // One sample per window
+    state.windows.forEach((window, windowIdx) => {
       newSamples.push({
         id: sampleNum++,
         day: day,
-        sample: s,
-        periodIdx: periodIdx,
-        startMinutes: period ? period.startHour * 60 + period.startMin : 540,
-        duration: period?.duration || 90
+        sample: windowIdx + 1,
+        windowIdx: windowIdx,
+        startMinutes: window.startHour * 60 + window.startMin,
+        duration: window.duration
       });
-    }
+    });
   }
 
   state.samples = newSamples;
   renderSamples();
 }
 
-function handleAddPeriod() {
-  const maxId = Math.max(0, ...state.periods.map(d => d.id));
-  state.periods.push({ id: maxId + 1, startHour: 9, startMin: 0, duration: 90 });
-  renderPeriods();
+function handleAddWindow() {
+  const maxId = Math.max(0, ...state.windows.map(w => w.id));
+  // Default to adding a window after the last one, or 9:00 if no windows
+  const lastWindow = state.windows[state.windows.length - 1];
+  let newStartHour = 9;
+  let newStartMin = 0;
+  if (lastWindow) {
+    const lastEnd = lastWindow.startHour * 60 + lastWindow.startMin + lastWindow.duration + 30; // 30 min gap
+    newStartHour = Math.floor(lastEnd / 60);
+    newStartMin = lastEnd % 60;
+  }
+  state.windows.push({ id: maxId + 1, startHour: newStartHour, startMin: newStartMin, duration: 150 });
+  renderWindows();
 }
 
 // ============================================================================
@@ -619,8 +839,12 @@ function bindFormInput(elementId, stateKey, transform = v => v) {
 
   el.addEventListener("input", () => {
     state[stateKey] = transform(el.value);
-    // Re-render samples table if deliverAtPrefix changes (affects field names)
+    // Re-render UI if relevant fields change
     if (stateKey === "deliverAtPrefix") {
+      renderSamples();
+    }
+    if (stateKey === "dayJitter") {
+      renderTimeline();
       renderSamples();
     }
   });
@@ -653,7 +877,7 @@ export function init() {
   bindFormInput("asi-subject", "asiSubject");
   bindFormInput("asi-body", "asiBody");
   bindNumericInput("num-days", "numDays");
-  bindNumericInput("samples-per-day", "samplesPerDay");
+  bindNumericInput("day-jitter", "dayJitter");
 
   // XML file import
   const xmlInput = document.getElementById("xml-file");
@@ -663,10 +887,10 @@ export function init() {
     });
   }
 
-  // Add period button
-  const addPeriodBtn = document.getElementById("add-period-btn");
-  if (addPeriodBtn) {
-    addPeriodBtn.addEventListener("click", handleAddPeriod);
+  // Add window button
+  const addWindowBtn = document.getElementById("add-window-btn");
+  if (addWindowBtn) {
+    addWindowBtn.addEventListener("click", handleAddWindow);
   }
 
   // Generate schedule button
@@ -681,6 +905,6 @@ export function init() {
   });
 
   // Initial render
-  renderPeriods();
+  renderWindows();
   renderSamples();
 }

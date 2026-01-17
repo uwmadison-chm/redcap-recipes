@@ -107,17 +107,7 @@ Upload an existing REDCap project XML to extract existing configuration. This he
 :::
 :::
 
-## 3. Define Periods
-
-Periods are the time windows during which EMA samples can be scheduled. Each sample will be randomly placed within its assigned period.
-
-<div id="periods-container"></div>
-
-<button id="add-period-btn" class="btn btn-outline-primary mt-2">Add Period</button>
-
-## 4. Sample Schedule
-
-Generate a schedule with a fixed number of days and samples per day.
+## 3. Schedule Settings
 
 <div class="d-flex align-items-end gap-3 mb-3">
 <div>
@@ -125,19 +115,36 @@ Generate a schedule with a fixed number of days and samples per day.
 <input type="number" class="form-control" id="num-days" value="7" min="1" max="30" step="1" style="width: 120px;">
 </div>
 <div>
-<label for="samples-per-day" class="form-label">Samples per day</label>
-<input type="number" class="form-control" id="samples-per-day" value="2" min="1" max="10" step="1" style="width: 120px;">
+<label for="day-jitter" class="form-label">Day jitter (± minutes)</label>
+<input type="number" class="form-control" id="day-jitter" value="15" min="0" max="60" step="5" style="width: 120px;">
 </div>
-<div>
+</div>
+
+::: {.callout-tip title="Day jitter" collapse="true"}
+**Day jitter** shifts all sampling windows by a random offset each day. This helps avoid "dead zones" — times between windows that would never be sampled.
+
+For example, with ±15 minute jitter, each day's windows shift by a random amount between -15 and +15 minutes. Over many days, this provides broader coverage of the waking period.
+
+Set to 0 to disable jitter. To eliminate dead zones entirely, set jitter ≥ half the gap between your windows.
+:::
+
+### Sampling Windows
+
+Define the time windows during which samples can be scheduled. Each window produces one sample per day, randomly placed within that window.
+
+<div id="windows-container"></div>
+
+<div id="timeline-container" class="my-3"></div>
+
+<button id="add-window-btn" class="btn btn-outline-primary me-2">Add Window</button>
+
 <button id="generate-btn" class="btn btn-primary">Generate Schedule</button>
-</div>
-</div>
 
 ### Generated Schedule
 
 <div id="samples-container"></div>
 
-## 5. ASI Settings
+## 4. ASI Settings
 
 Configure how survey invitations will be sent.
 
@@ -167,7 +174,7 @@ Configure how survey invitations will be sent.
 <p>[survey-link]</p></textarea>
 </div>
 
-## 6. Download Files
+## 5. Download Files
 
 <div id="download-buttons" class="mb-3"></div>
 
