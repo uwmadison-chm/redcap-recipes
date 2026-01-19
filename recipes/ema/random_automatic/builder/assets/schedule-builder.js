@@ -17,6 +17,12 @@ function lcgNext(current) {
   return (LCG_A_NUM * current + LCG_C_NUM) % LCG_M_NUM;
 }
 
+// Extract a random integer in [0, max) using upper bits of LCG output
+// (Low bits of LCG have poor randomness - the classic LCG pitfall)
+function lcgMod(rand, max) {
+  return Math.floor((rand / LCG_M_NUM) * max);
+}
+
 // Run Monte Carlo simulation and return array of {time, windowIdx} objects
 function runMonteCarloSimulation(numRuns = 10000) {
   const { windows, numDays, dayJitter } = state;
@@ -39,14 +45,14 @@ function runMonteCarloSimulation(numRuns = 10000) {
       let dayJitterOffset = 0;
       if (dayJitter > 0) {
         rand = lcgNext(rand);
-        dayJitterOffset = (rand % jitterRange) - dayJitter;
+        dayJitterOffset = lcgMod(rand, jitterRange) - dayJitter;
       }
 
       // Generate sample time for each window
       windows.forEach((window, windowIdx) => {
         rand = lcgNext(rand);
         const windowStart = window.startHour * 60 + window.startMin;
-        const sampleOffset = rand % window.duration;
+        const sampleOffset = lcgMod(rand, window.duration);
         const sampleTime = windowStart + dayJitterOffset + sampleOffset;
         allSamples.push({ time: sampleTime, windowIdx });
       });
