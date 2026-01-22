@@ -169,13 +169,21 @@ function renderHistogram() {
 // ============================================================================
 
 const state = {
-  // 4 windows: 9:15-11:45, 12:15-2:45, 3:15-5:45, 6:15-8:45 (150 min each, 30 min gaps)
-  windows: [
-    { id: 1, startHour: 9, startMin: 15, duration: 150 },
-    { id: 2, startHour: 12, startMin: 15, duration: 150 },
-    { id: 3, startHour: 15, startMin: 15, duration: 150 },
-    { id: 4, startHour: 18, startMin: 15, duration: 150 }
-  ],
+  // Schedule mode: "simple" or "advanced"
+  scheduleMode: "simple",
+
+  // Simple mode parameters
+  simpleStartHour: 9,
+  simpleStartMin: 0,
+  simpleEndHour: 21,  // 9 PM
+  simpleEndMin: 0,
+  samplesPerDay: 4,
+  minGap: 30,
+
+  // Windows (generated from simple mode, or manually edited in advanced mode)
+  windows: [],
+  dayJitter: 15,  // ±15 minutes
+
   samples: [],
   parsedProject: null,
 
@@ -196,9 +204,94 @@ const state = {
   asiLogic: '[email] <> ""',
   asiSubject: "EMA Survey: [event-name]",
   asiBody: "<p>Please complete your EMA survey:</p>\n<p>[survey-link]</p>",
-  numDays: 7,
-  dayJitter: 15  // ±15 minutes
+  numDays: 7
 };
+
+// ============================================================================
+// SIMPLE MODE HELPERS
+// ============================================================================
+
+// Generate windows and jitter from simple mode parameters
+function generateWindowsFromSimple() {
+  const { simpleStartHour, simpleStartMin, simpleEndHour, simpleEndMin, samplesPerDay, minGap } = state;
+
+  // Jitter is half the gap (eliminates dead zones)
+  const jitter = Math.floor(minGap / 2);
+
+  // The user-specified start/end times are the OUTER bounds (no sample should arrive outside).
+  // With jitter, the actual windows must be inset by the jitter amount:
+  // - First window starts at (start + jitter) so earliest sample (with -jitter) lands at start
+  // - Last window ends at (end - jitter) so latest sample (with +jitter) lands at end
+  const outerStartMin = simpleStartHour * 60 + simpleStartMin;
+  const outerEndMin = simpleEndHour * 60 + simpleEndMin;
+  const innerStartMin = outerStartMin + jitter;
+  const innerEndMin = outerEndMin - jitter;
+  const totalSpan = innerEndMin - innerStartMin;
+
+  if (samplesPerDay < 1 || totalSpan <= 0) {
+    state.windows = [];
+    state.dayJitter = 0;
+    renderSimpleModeSummary(0);
+    return;
+  }
+
+  // Calculate window duration:
+  // totalSpan = (samplesPerDay * windowDuration) + ((samplesPerDay - 1) * minGap)
+  // windowDuration = (totalSpan - (samplesPerDay - 1) * minGap) / samplesPerDay
+  const totalGapTime = (samplesPerDay - 1) * minGap;
+  const windowDuration = Math.floor((totalSpan - totalGapTime) / samplesPerDay);
+
+  if (windowDuration <= 0) {
+    state.windows = [];
+    state.dayJitter = 0;
+    renderSimpleModeSummary(0);
+    return;
+  }
+
+  // Generate windows starting from the inset start time
+  const windows = [];
+  let currentStart = innerStartMin;
+
+  for (let i = 0; i < samplesPerDay; i++) {
+    const startHour = Math.floor(currentStart / 60);
+    const startMinute = currentStart % 60;
+    windows.push({
+      id: i + 1,
+      startHour: startHour,
+      startMin: startMinute,
+      duration: windowDuration
+    });
+    currentStart += windowDuration + minGap;
+  }
+
+  state.windows = windows;
+  state.dayJitter = jitter;
+
+  // Update summary display
+  renderSimpleModeSummary(windowDuration);
+}
+
+function renderSimpleModeSummary(windowDuration) {
+  const container = document.getElementById("simple-mode-summary");
+  if (!container) return;
+
+  if (state.windows.length === 0 || windowDuration <= 0) {
+    container.innerHTML = `<span style="color: #dc3545;">⚠ Invalid configuration — windows don't fit. Try reducing samples or minimum gap.</span>`;
+    return;
+  }
+
+  const hours = Math.floor(windowDuration / 60);
+  const mins = windowDuration % 60;
+  const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+  // Show the effective window range (first window start to last window end)
+  const firstWindow = state.windows[0];
+  const lastWindow = state.windows[state.windows.length - 1];
+  const firstStart = firstWindow.startHour * 60 + firstWindow.startMin;
+  const lastEnd = lastWindow.startHour * 60 + lastWindow.startMin + lastWindow.duration;
+
+  container.innerHTML = `→ ${state.windows.length} windows × ${durationStr} each, ±${state.dayJitter}min jitter (windows span ${formatTime(firstStart)}–${formatTime(lastEnd)})`;
+}
 
 // ============================================================================
 // GENERATION FUNCTIONS
@@ -724,6 +817,11 @@ function renderWindows() {
   // Update visualizations
   renderTimeline();
   renderHistogram();
+
+  // Auto-generate samples when windows are defined
+  autoGenerateSamples();
+  renderFieldReference();
+  renderDownloads();
 }
 
 function renderSamples() {
@@ -803,12 +901,176 @@ function renderSamples() {
   renderDownloads();
 }
 
+function renderFieldReference() {
+  const container = document.getElementById("field-reference-container");
+  if (!container) return;
+
+  if (state.windows.length === 0) {
+    container.innerHTML = `<p class="text-muted">Configure sampling windows to see field definitions.</p>`;
+    return;
+  }
+
+  const { configForm, startField, randPrefix, seedField,
+    deliverAtPrefix, fieldNameA, fieldNameC, fieldNameM, asiSurveyForm, dayJitter, numDays } = state;
+
+  const fields = [];
+
+  // Core setup fields
+  fields.push({
+    name: "record_id",
+    description: "Record ID",
+    type: "text",
+    calculation: "",
+    annotation: ""
+  });
+
+  fields.push({
+    name: seedField,
+    description: "Seed input",
+    type: "text",
+    calculation: "",
+    annotation: "@DEFAULT='[record-name]' @HIDDEN"
+  });
+
+  fields.push({
+    name: startField,
+    description: "EMA start date/time",
+    type: "text (datetime)",
+    calculation: "",
+    annotation: ""
+  });
+
+  // LCG constants
+  fields.push({
+    name: fieldNameA,
+    description: "LCG multiplier (a)",
+    type: "text",
+    calculation: "",
+    annotation: `@DEFAULT='${LCG_A}' @HIDDEN`
+  });
+
+  fields.push({
+    name: fieldNameC,
+    description: "LCG increment (c)",
+    type: "text",
+    calculation: "",
+    annotation: `@DEFAULT='${LCG_C}' @HIDDEN`
+  });
+
+  fields.push({
+    name: fieldNameM,
+    description: "LCG modulus (m)",
+    type: "text",
+    calculation: "",
+    annotation: `@DEFAULT='${LCG_M}' @HIDDEN`
+  });
+
+  // Processed seed
+  fields.push({
+    name: "seed",
+    description: "Seed (processed)",
+    type: "calc",
+    calculation: `mod((a × mod((a × mod((a × ${seedField}) + c, m) + c, m) + c, m)`,
+    annotation: "@HIDDEN"
+  });
+
+  // Day jitter fields (if enabled)
+  if (dayJitter > 0) {
+    fields.push({
+      name: `${randPrefix}_jitter_d01...d${String(numDays).padStart(2, '0')}`,
+      description: `Jitter random numbers (${numDays} fields)`,
+      type: "calc",
+      calculation: "mod((a × [prev_rand]) + c, m)",
+      annotation: "@HIDDEN"
+    });
+
+    fields.push({
+      name: `jitter_offset_d01...d${String(numDays).padStart(2, '0')}`,
+      description: `Jitter offset in minutes (${numDays} fields)`,
+      type: "calc",
+      calculation: `mod([rand], ${dayJitter * 2}) - ${dayJitter}`,
+      annotation: "@HIDDEN"
+    });
+  }
+
+  // Random number fields for samples
+  const totalSamples = numDays * state.windows.length;
+  fields.push({
+    name: `${randPrefix}_01...${String(totalSamples).padStart(2, '0')}`,
+    description: `Sample random numbers (${totalSamples} fields)`,
+    type: "calc",
+    calculation: "mod((a × [prev_rand]) + c, m)",
+    annotation: "@HIDDEN"
+  });
+
+  // Deliver-at fields
+  const sampleDesc = state.windows.length > 1
+    ? `s01...s${String(state.windows.length).padStart(2, '0')}`
+    : "s01";
+  fields.push({
+    name: `${deliverAtPrefix}_d01_${sampleDesc}...d${String(numDays).padStart(2, '0')}_${sampleDesc}`,
+    description: `Scheduled delivery times (${totalSamples} fields)`,
+    type: "text (datetime)",
+    calculation: dayJitter > 0
+      ? "@CALCDATE([start], days + window_start + jitter + random_offset, 'm')"
+      : "@CALCDATE([start], days + window_start + random_offset, 'm')",
+    annotation: ""
+  });
+
+  // Survey placeholder
+  fields.push({
+    name: `${asiSurveyForm}_placeholder`,
+    description: "Survey form placeholder",
+    type: "descriptive",
+    calculation: "",
+    annotation: ""
+  });
+
+  // Render table
+  let html = `
+    <table class="table table-sm" style="font-size: 0.85em;">
+      <thead>
+        <tr>
+          <th>Field Name</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Calculation</th>
+          <th>Annotation</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  for (const field of fields) {
+    html += `
+      <tr>
+        <td><code>${escapeHtml(field.name)}</code></td>
+        <td>${escapeHtml(field.description)}</td>
+        <td>${escapeHtml(field.type)}</td>
+        <td><code style="font-size: 0.9em;">${escapeHtml(field.calculation) || "—"}</code></td>
+        <td><code style="font-size: 0.9em;">${escapeHtml(field.annotation) || "—"}</code></td>
+      </tr>
+    `;
+  }
+
+  html += `
+      </tbody>
+    </table>
+    <p class="text-muted" style="font-size: 0.85em;">
+      Total: <strong>${6 + (dayJitter > 0 ? numDays * 2 : 0) + totalSamples * 2 + 1}</strong> fields
+      on form <code>${configForm}</code>, plus placeholder on <code>${asiSurveyForm}</code>
+    </p>
+  `;
+
+  container.innerHTML = html;
+}
+
 function renderDownloads() {
   const container = document.getElementById("download-buttons");
   if (!container) return;
 
   if (state.samples.length === 0) {
-    container.innerHTML = `<div class="alert alert-warning">Generate a sample schedule first (Step 4) to enable downloads.</div>`;
+    container.innerHTML = `<div class="alert alert-warning">Configure sampling windows in Step 3 to enable downloads.</div>`;
     renderPreview();
     return;
   }
@@ -978,11 +1240,17 @@ function handleXmlImport(file) {
     }
 
     renderProjectInfo();
-    renderSamples();
+    renderFieldReference();
+    renderDownloads();
   });
 }
 
-function handleGenerateSchedule() {
+function autoGenerateSamples() {
+  if (state.windows.length === 0) {
+    state.samples = [];
+    return;
+  }
+
   const newSamples = [];
   let sampleNum = 1;
 
@@ -1001,7 +1269,6 @@ function handleGenerateSchedule() {
   }
 
   state.samples = newSamples;
-  renderSamples();
 }
 
 function handleAddWindow() {
@@ -1019,6 +1286,100 @@ function handleAddWindow() {
   renderWindows();
 }
 
+function handleModeSwitch(mode) {
+  if (mode === state.scheduleMode) return;
+
+  state.scheduleMode = mode;
+
+  if (mode === "simple") {
+    // Regenerate windows from simple params (discards any manual edits)
+    generateWindowsFromSimple();
+  }
+
+  renderScheduleMode();
+  renderWindows();
+}
+
+function handleSimpleParamChange() {
+  generateWindowsFromSimple();
+  renderWindows();
+}
+
+function renderScheduleMode() {
+  const simpleSection = document.getElementById("simple-mode-section");
+  const advancedSection = document.getElementById("advanced-mode-section");
+  const simpleModeBtn = document.getElementById("simple-mode-btn");
+  const advancedModeBtn = document.getElementById("advanced-mode-btn");
+
+  if (!simpleSection || !advancedSection) return;
+
+  if (state.scheduleMode === "simple") {
+    simpleSection.style.display = "block";
+    advancedSection.style.display = "none";
+    simpleModeBtn?.classList.add("active");
+    advancedModeBtn?.classList.remove("active");
+  } else {
+    simpleSection.style.display = "none";
+    advancedSection.style.display = "block";
+    simpleModeBtn?.classList.remove("active");
+    advancedModeBtn?.classList.add("active");
+  }
+}
+
+function bindSimpleModeInputs() {
+  // Helper to bind time inputs (hour:minute pairs)
+  const bindTimeInput = (hourId, minId, hourKey, minKey) => {
+    const hourEl = document.getElementById(hourId);
+    const minEl = document.getElementById(minId);
+    if (hourEl) {
+      hourEl.value = state[hourKey];
+      hourEl.addEventListener("input", () => {
+        state[hourKey] = parseInt(hourEl.value) || 0;
+        handleSimpleParamChange();
+      });
+    }
+    if (minEl) {
+      minEl.value = state[minKey];
+      minEl.addEventListener("input", () => {
+        state[minKey] = parseInt(minEl.value) || 0;
+        handleSimpleParamChange();
+      });
+    }
+  };
+
+  bindTimeInput("simple-start-hour", "simple-start-min", "simpleStartHour", "simpleStartMin");
+  bindTimeInput("simple-end-hour", "simple-end-min", "simpleEndHour", "simpleEndMin");
+
+  const samplesEl = document.getElementById("samples-per-day");
+  if (samplesEl) {
+    samplesEl.value = state.samplesPerDay;
+    samplesEl.addEventListener("input", () => {
+      state.samplesPerDay = parseInt(samplesEl.value) || 1;
+      handleSimpleParamChange();
+    });
+  }
+
+  const minGapEl = document.getElementById("min-gap");
+  if (minGapEl) {
+    minGapEl.value = state.minGap;
+    minGapEl.addEventListener("input", () => {
+      state.minGap = parseInt(minGapEl.value) || 0;
+      handleSimpleParamChange();
+    });
+  }
+
+  // Mode toggle buttons
+  const simpleModeBtn = document.getElementById("simple-mode-btn");
+  const advancedModeBtn = document.getElementById("advanced-mode-btn");
+
+  if (simpleModeBtn) {
+    simpleModeBtn.addEventListener("click", () => handleModeSwitch("simple"));
+  }
+  if (advancedModeBtn) {
+    advancedModeBtn.addEventListener("click", () => handleModeSwitch("advanced"));
+  }
+}
+
 // ============================================================================
 // FORM BINDING
 // ============================================================================
@@ -1034,15 +1395,21 @@ function bindFormInput(elementId, stateKey, transform = v => v) {
     state[stateKey] = transform(el.value);
     // Re-render UI if relevant fields change
     if (stateKey === "deliverAtPrefix") {
-      renderSamples();
+      renderFieldReference();
+      renderDownloads();
     }
     if (stateKey === "dayJitter") {
       renderTimeline();
       renderHistogram();
-      renderSamples();
+      autoGenerateSamples();
+      renderFieldReference();
+      renderDownloads();
     }
     if (stateKey === "numDays") {
       renderHistogram();
+      autoGenerateSamples();
+      renderFieldReference();
+      renderDownloads();
     }
   });
 }
@@ -1076,6 +1443,9 @@ export function init() {
   bindNumericInput("num-days", "numDays");
   bindNumericInput("day-jitter", "dayJitter");
 
+  // Simple mode inputs
+  bindSimpleModeInputs();
+
   // XML file import
   const xmlInput = document.getElementById("xml-file");
   if (xmlInput) {
@@ -1090,18 +1460,15 @@ export function init() {
     addWindowBtn.addEventListener("click", handleAddWindow);
   }
 
-  // Generate schedule button
-  const generateBtn = document.getElementById("generate-btn");
-  if (generateBtn) {
-    generateBtn.addEventListener("click", handleGenerateSchedule);
-  }
-
   // Preview tabs
   document.querySelectorAll('input[name="preview-tab"]').forEach(radio => {
     radio.addEventListener("change", renderPreview);
   });
 
+  // Generate initial windows from simple mode defaults
+  generateWindowsFromSimple();
+
   // Initial render
-  renderWindows();
-  renderSamples();
+  renderScheduleMode();
+  renderWindows();  // This also auto-generates samples and renders field reference
 }
