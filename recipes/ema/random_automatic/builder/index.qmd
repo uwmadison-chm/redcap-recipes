@@ -107,37 +107,85 @@ Upload an existing REDCap project XML to extract existing configuration. This he
 :::
 :::
 
-## 3. Define Periods
+## 3. Schedule Settings
 
-Periods are the time windows during which EMA samples can be scheduled. Each sample will be randomly placed within its assigned period.
+<div class="d-flex align-items-center gap-3 mb-3">
+<div>
+<label for="num-days" class="form-label">Number of days</label>
+<input type="number" class="form-control" id="num-days" value="7" min="1" max="30" step="1" style="width: 100px;">
+</div>
+<div class="ms-auto">
+<div class="btn-group" role="group" aria-label="Schedule mode">
+<button type="button" class="btn btn-outline-secondary active" id="simple-mode-btn">Simple</button>
+<button type="button" class="btn btn-outline-secondary" id="advanced-mode-btn">Advanced</button>
+</div>
+</div>
+</div>
 
-<div id="periods-container"></div>
+<!-- Simple Mode -->
+<div id="simple-mode-section">
 
-<button id="add-period-btn" class="btn btn-outline-primary mt-2">Add Period</button>
+<div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
+<div>
+<label class="form-label">Start time</label>
+<div style="display: flex; align-items: center;"><input type="number" class="form-control" id="simple-start-hour" value="9" min="0" max="23" style="width: 65px;"><span style="padding: 0 0.5rem;">:</span><input type="number" class="form-control" id="simple-start-min" value="0" min="0" max="59" step="5" style="width: 65px;"></div>
+</div>
+<div>
+<label class="form-label">End time</label>
+<div style="display: flex; align-items: center;"><input type="number" class="form-control" id="simple-end-hour" value="21" min="0" max="23" style="width: 65px;"><span style="padding: 0 0.5rem;">:</span><input type="number" class="form-control" id="simple-end-min" value="0" min="0" max="59" step="5" style="width: 65px;"></div>
+</div>
+<div>
+<label for="samples-per-day" class="form-label">Samples/day</label>
+<div style="display: flex; align-items: center;"><input type="number" class="form-control" id="samples-per-day" value="4" min="1" max="20" step="1" style="width: 80px;"></div>
+</div>
+<div>
+<label for="min-gap" class="form-label">Min gap (min)</label>
+<div style="display: flex; align-items: center;"><input type="number" class="form-control" id="min-gap" value="30" min="0" max="180" step="5" style="width: 100px;"></div>
+</div>
+</div>
 
-## 4. Sample Schedule
+<div id="simple-mode-summary" class="text-muted mb-3" style="font-size: 0.9em;"></div>
 
-Generate a schedule with a fixed number of days and samples per day.
+</div>
+
+<!-- Advanced Mode -->
+<div id="advanced-mode-section" style="display: none;">
 
 <div class="d-flex align-items-end gap-3 mb-3">
 <div>
-<label for="num-days" class="form-label">Number of days</label>
-<input type="number" class="form-control" id="num-days" value="7" min="1" max="30" step="1" style="width: 120px;">
-</div>
-<div>
-<label for="samples-per-day" class="form-label">Samples per day</label>
-<input type="number" class="form-control" id="samples-per-day" value="2" min="1" max="10" step="1" style="width: 120px;">
-</div>
-<div>
-<button id="generate-btn" class="btn btn-primary">Generate Schedule</button>
+<label for="day-jitter" class="form-label">Day jitter (± min)</label>
+<input type="number" class="form-control" id="day-jitter" value="15" min="0" max="60" step="5" style="width: 100px;">
 </div>
 </div>
 
-### Generated Schedule
+<h4>Sampling Windows</h4>
 
-<div id="samples-container"></div>
+<p class="text-muted" style="font-size: 0.9em;">Each window produces one sample per day, randomly placed within that window.</p>
 
-## 5. ASI Settings
+<div id="windows-container"></div>
+
+<button id="add-window-btn" class="btn btn-outline-primary btn-sm mb-3">Add Window</button>
+
+::: {.callout-tip title="Day jitter" collapse="true"}
+**Day jitter** shifts all sampling windows by a random offset each day. This helps avoid "dead zones" — times between windows that would never be sampled.
+
+Set to 0 to disable jitter. To eliminate dead zones entirely, set jitter ≥ half the gap between your windows.
+:::
+
+</div>
+
+<!-- Common elements for both modes -->
+<div id="timeline-container" class="my-3"></div>
+
+<div id="histogram-container" class="my-3"></div>
+
+::: {.callout-note title="Field Reference" collapse="true"}
+View all fields that will be created for this EMA configuration.
+
+<div id="field-reference-container"></div>
+:::
+
+## 4. ASI Settings
 
 Configure how survey invitations will be sent.
 
@@ -167,7 +215,7 @@ Configure how survey invitations will be sent.
 <p>[survey-link]</p></textarea>
 </div>
 
-## 6. Download Files
+## 5. Download Files
 
 <div id="download-buttons" class="mb-3"></div>
 
