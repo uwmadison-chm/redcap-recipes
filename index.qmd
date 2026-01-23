@@ -31,7 +31,7 @@ This guide was written by Nate Vack and Stuti Shrivistava at the Center for Heal
 
 ## Contributing
 
-Have a recipe to share? Found an error? Contributions are welcome! Visit our [GitHub repository](https://github.com/centerforhealthyminds/redcap-recipes) to contribute or report issues.
+Have a recipe to share? Found an error? Contributions are welcome! Visit our [GitHub repository](https://github.com/uwmadison-chm/redcap-recipes) to contribute or report issues.
 
 ## Citations
 
