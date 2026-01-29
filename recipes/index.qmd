@@ -20,8 +20,8 @@ Have a specific REDCap challenge you'd like to see addressed? [Open an issue](ht
 We welcome contributions! If you have a recipe to share:
 
 1. Fork the repository
-2. Create a new `.qmd` file in the `recipes/` directory
-3. Follow the structure shown in existing recipes
-4. Submit a pull request
+1. Create a new `.qmd` file in the `recipes/` directory
+1. Follow the structure shown in existing recipes
+1. Submit a pull request
 
 See our [GitHub repository](https://github.com/centerforhealthyminds/redcap-recipes) for more details.

@@ -13,17 +13,17 @@ categories: [alert, asi, communication]
 
 ## Prerequisites
 
-* A study with an email address for the participant. In this recipe, it's `email`
-* A staff-side tracking form with a field indicating that the participant should not be contacted further. In this recipe, it's `no_contact`, a Yes/No on the `tracking` form.
-* At least one ASI or Alert
+- A study with an email address for the participant. In this recipe, it's `email`
+- A staff-side tracking form with a field indicating that the participant should not be contacted further. In this recipe, it's `no_contact`, a Yes/No on the `tracking` form.
+- At least one ASI or Alert
 
 ## Steps
 
 1. Add a field to your `tracking` form. Required settings:
-    * Field Type: Text Box
-    * Validation: email
-    * Variable Name: `current_email`
-    * Action Tags: `@CALCTEXT(if([no_contact] = '1', '', [email]))`
+    - Field Type: Text Box
+    - Validation: email
+    - Variable Name: `current_email`
+    - Action Tags: `@CALCTEXT(if([no_contact] = '1', '', [email]))`
 1. If you have existing data, re-calculate the field
 1. In **Project Setup** > **Designate an email field for communications**, use `current_email`
 1. If desired, add `@HIDDEN` to the `current_email` field.

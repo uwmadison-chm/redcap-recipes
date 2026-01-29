@@ -13,9 +13,9 @@ categories: [ema, survey, scheduling, asi]
 
 ## Prerequisites
 
-* An email field for participants
-* **Project Setup and Design** rights
-* **Alerts & Notifications** rights
+- An email field for participants
+- **Project Setup and Design** rights
+- **Alerts & Notifications** rights
 
 ## When to Use This Approach
 
@@ -34,9 +34,9 @@ See the [EMA overview](../) for other approaches.
 
 1. Create a new instrument called `welcome`
 1. Add an email field to capture the participant's email address:
-    * Field Type: Text Box
-    * Validation: Email
-    * Variable Name: `email`
+    - Field Type: Text Box
+    - Validation: Email
+    - Variable Name: `email`
 1. Enable the instrument as a survey in **Designer** > **Enable** (click the instrument options icon)
 1. In **Project Setup** > **Designate an email field for communications**, select `email`
 
@@ -51,7 +51,7 @@ See the [EMA overview](../) for other approaches.
 1. Go to **Project Setup** >  **Repeating instruments**
 1. Click **Enable**
 1. Configure the repeating instruments:
-    * Check the box next to `diary`
+    - Check the box next to `diary`
 
 ### Create the ASI
 
@@ -63,13 +63,13 @@ See the [EMA overview](../) for other approaches.
 
 ## Notes
 
-* **Timing precision:** How often REDCap sends scheduled messages depends on your instance's server settings. Our server sends scheduled messages every 5 minutes. **Send immediately** alerts are generally not subject to this delay.
-* **First survey timing:** The first diary invitation will be sent on the next scheduled time after the welcome survey is completed. If a participant completes the welcome survey at 2 PM and you've scheduled surveys for 9 AM, they'll receive their first diary survey the next morning at 9 AM.
-* **New instance behavior:** Each survey invitation creates a new repeating instance of the `diary` instrument. You don't need to manually create instances with `[new-instance]`
-* **Time zones:** REDCap uses the server's time zone for all automated invitations. Taking time zones into account is a subject for another recipe.
-* **Stopping the invitations:** To stop surveys for participants who withdraw, see [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
-* **Survey expiration:** Setting an expiration (e.g., 24 hours) can help keep data collection timely, but consider your participants' schedules and availability
-* **Other contact methods:** The exact same practices apply if you're using an SMS provider such as Twilio or Mosio.
+- **Timing precision:** How often REDCap sends scheduled messages depends on your instance's server settings. Our server sends scheduled messages every 5 minutes. **Send immediately** alerts are generally not subject to this delay.
+- **First survey timing:** The first diary invitation will be sent on the next scheduled time after the welcome survey is completed. If a participant completes the welcome survey at 2 PM and you've scheduled surveys for 9 AM, they'll receive their first diary survey the next morning at 9 AM.
+- **New instance behavior:** Each survey invitation creates a new repeating instance of the `diary` instrument. You don't need to manually create instances with `[new-instance]`
+- **Time zones:** REDCap uses the server's time zone for all automated invitations. Taking time zones into account is a subject for another recipe.
+- **Stopping the invitations:** To stop surveys for participants who withdraw, see [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
+- **Survey expiration:** Setting an expiration (e.g., 24 hours) can help keep data collection timely, but consider your participants' schedules and availability
+- **Other contact methods:** The exact same practices apply if you're using an SMS provider such as Twilio or Mosio.
 
 ::: {.callout-warning}
 Remember the server schedule delay when you are troubleshooting!
@@ -78,10 +78,10 @@ Remember the server schedule delay when you are troubleshooting!
 
 ## Troubleshooting
 
-* Verify the ASI is active and saved
-* Confirm the condition logic evaluates to true for the records you expect
-* Check that the email field is really the designated email field
-* Check **Survey Distribution Tools** > **Survey Invitation Log** to see scheduled and sent invitations
+- Verify the ASI is active and saved
+- Confirm the condition logic evaluates to true for the records you expect
+- Check that the email field is really the designated email field
+- Check **Survey Distribution Tools** > **Survey Invitation Log** to see scheduled and sent invitations
 
 ::: {.callout-warning}
 During the time between when a survey is scheduled and when it is sent, it will not appear in the **Survey Invitation Log** at all.

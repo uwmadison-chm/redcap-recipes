@@ -21,9 +21,9 @@ You should expect to adapt these recipes to your own studies. Your field names w
 
 ## About 
 
-This guide was developed using a REDCap system at the University of Wisconsin-Madison, hosted by the School of Medicine and Public Health. The authors are neither REDCap admins nor members of the REDCap consortium; our knowledge of REDCap's inner workings and implementation is limited to what is publicly available, with advice from our local admin team.
+This guide was developed using a REDCap system at the University of Wisconsin-Madison, hosted by the School of Medicine and Public Health (SMPH). The authors are neither REDCap admins nor members of the REDCap consortium; our knowledge of REDCap's inner workings and implementation is limited to what is publicly available, with help and advice from the excellent SMPH crew.
 
-At the time of writing, the REDCap system we are using is version 15.6.1. It is mainly a stock installation; few (if any) guides here will rely on external modules. No guides will require system admin rights on your REDCap system.
+At the time of writing, the REDCap system we are using is version 16.0.6. It is mainly a stock installation; few (if any) recipes will rely on external modules. No guides will require admin rights on your REDCap system.
 
 You will need to have **Project Setup and Design** rights to your project. Some recipes will require other rights (**Alerts & Notifications**, **Data Import**, and so on.) We'll assume you already have necessary rights. Some recipes will only be practical for some studies through the use of the API, though the Data Import Tool will almost always be an alternative.
 

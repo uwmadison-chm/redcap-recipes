@@ -13,12 +13,12 @@ categories: [ema, survey, scheduling, alert, repeating-events, api]
 
 ## Prerequisites
 
-* A longitudinal REDCap project
-* An email field for participants (or phone number for SMS)
-* Ability to generate schedules (R, Python, Excel, or similar)
-* **Data Import Tool** access OR API access
-* **Project Setup and Design** rights
-* **Alerts & Notifications** rights
+- A longitudinal REDCap project
+- An email field for participants (or phone number for SMS)
+- Ability to generate schedules (R, Python, Excel, or similar)
+- **Data Import Tool** access OR API access
+- **Project Setup and Design** rights
+- **Alerts & Notifications** rights
 
 ## When to Use This Approach
 
@@ -37,43 +37,43 @@ See the [EMA overview](../) for other approaches.
 
 **Advantages:**
 
-* Maximum flexibility in scheduling logic
-* Can adjust schedules after enrollment (just re-import)
-* Easy to implement complex spacing rules
-* No need for many events or ASIs
-* Instance numbers link schedules to responses, making analysis straightforward
+- Maximum flexibility in scheduling logic
+- Can adjust schedules after enrollment (just re-import)
+- Easy to implement complex spacing rules
+- No need for many events or ASIs
+- Instance numbers link schedules to responses, making analysis straightforward
 
 **Drawbacks:**
 
-* Requires external tools to generate schedules
-* Must manually implement reminders and expiration
-* Requires Data Import Tool or API access
+- Requires external tools to generate schedules
+- Must manually implement reminders and expiration
+- Requires Data Import Tool or API access
 
 ## Steps
 
 ### Create the Project Structure
 
-* Create a longitudinal project with two events:
-    * `main`: For enrollment and baseline data
-    * `ema`: For the scheduled surveys
-* In the `main` event, add an instrument to collect the participant's email address (or phone number for SMS):
-    * Field Type: Text Box
-    * Validation: Email (or Phone)
-    * Variable Name: `email`
-* In **Project Setup** > **Designate an email field for communications**, select `email`
+- Create a longitudinal project with two events:
+    - `main`: For enrollment and baseline data
+    - `ema`: For the scheduled surveys
+- In the `main` event, add an instrument to collect the participant's email address (or phone number for SMS):
+    - Field Type: Text Box
+    - Validation: Email (or Phone)
+    - Variable Name: `email`
+- In **Project Setup** > **Designate an email field for communications**, select `email`
 
 ### Create the Schedule Instrument
 
-* Create a new instrument called `schedule` with at least two fields:
-    * `deliver_at`:
-        * Field Type: Text Box
-        * Validation: Datetime (Y-M-D H:M)
-        * Variable Name: `deliver_at`
-    * `expires_at`:
-        * Field Type: Text Box
-        * Validation: Datetime (Y-M-D H:M)
-        * Variable Name: `expires_at`
-* These fields will be populated by data import or API, not by users
+- Create a new instrument called `schedule` with at least two fields:
+    - `deliver_at`:
+        - Field Type: Text Box
+        - Validation: Datetime (Y-M-D H:M)
+        - Variable Name: `deliver_at`
+    - `expires_at`:
+        - Field Type: Text Box
+        - Validation: Datetime (Y-M-D H:M)
+        - Variable Name: `expires_at`
+- These fields will be populated by data import or API, not by users
 
 ::: {.callout-note}
 If you have multiple data collection periods (e.g., pre- and post-intervention), it's probably easiest to add an `ema_period` field to the `schedule` form and fill that in with your schedule generation script. The exception would be if you need the Alert text to be different, or if you're collecting different data in your different EMA periods.
@@ -81,21 +81,21 @@ If you have multiple data collection periods (e.g., pre- and post-intervention),
 
 ### Create the EMA Survey Instrument
 
-* Create a new instrument called `ema` with your data collection fields
-* Add a `started_at` field to track when participants begin the survey:
-    * Field Type: Text Box
-    * Validation: Datetime (Y-M-D H:M)
-    * Variable Name: `started_at`
-    * Action Tags: `@HIDDEN @NOW`
-* Enable the instrument as a survey
-* Configure survey settings as desired
+- Create a new instrument called `ema` with your data collection fields
+- Add a `started_at` field to track when participants begin the survey:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M)
+    - Variable Name: `started_at`
+    - Action Tags: `@HIDDEN @NOW`
+- Enable the instrument as a survey
+- Configure survey settings as desired
 
 ### Configure the EMA Event as Repeating
 
-* Go to **Project Setup** > **Repeating instruments and events**
-* Click **Enable**
-* For the `ema` event, select **Treat the entire event as repeating**
-* Ensure both the `schedule` and `ema` instruments are designated for the `ema` event
+- Go to **Project Setup** > **Repeating instruments and events**
+- Click **Enable**
+- For the `ema` event, select **Treat the entire event as repeating**
+- Ensure both the `schedule` and `ema` instruments are designated for the `ema` event
 
 ::: {.callout-note}
 Instance numbers will now be synchronized across both instruments. Instance 1 of `schedule` corresponds to instance 1 of `ema`, and so on. This makes it easy to see which surveys were completed.
@@ -103,13 +103,13 @@ Instance numbers will now be synchronized across both instruments. Instance 1 of
 
 ### Generate and Import Schedules
 
-* Generate your schedules externally using R, Python, Excel, or similar tools. Each row should include:
-    * `record_id`
-    * `redcap_event_name` (the `ema` event's unique name, typically `ema_arm_1`)
-    * `redcap_repeat_instance` (1, 2, 3, ...)
-    * `deliver_at` (format: `YYYY-MM-DD HH:MM`)
-    * `expires_at` (format: `YYYY-MM-DD HH:MM`)
-* Import the schedules using **Data Import Tool** or the API
+- Generate your schedules externally using R, Python, Excel, or similar tools. Each row should include:
+    - `record_id`
+    - `redcap_event_name` (the `ema` event's unique name, typically `ema_arm_1`)
+    - `redcap_repeat_instance` (1, 2, 3, ...)
+    - `deliver_at` (format: `YYYY-MM-DD HH:MM`)
+    - `expires_at` (format: `YYYY-MM-DD HH:MM`)
+- Import the schedules using **Data Import Tool** or the API
 
 ::: {.callout-note}
 Schedule generation is left as an exercise for now.
@@ -117,20 +117,20 @@ Schedule generation is left as an exercise for now.
 
 ### Create the Alert to Send Surveys
 
-* Go to **Alerts & Notifications**
-* Click **Add New Alert**
-* Configure the Alert:
-    * **Alert title:** Something like "Send EMA Survey"
-    * **Trigger alert when:** `(datediff("now", [ema_arm_1][expires_at][current-instance], "s", true) > 0)`
-        * The `[current-instance]` piping is **critical** — without it, the Alert will evaluate against all instances and send far too many notifications
-        * The logic checks if "now" is before `expires_at`. If the alert is delayed for any reason (REDCap scheduler down, blank email field, bug in logic), expired surveys won't be sent when the problem is fixed.
-    * **Ensure logic is still true before sending:** Check this box
-    * **When to send the alert:** At the time specified by a date/time field
-        * Field: `deliver_at`
-    * **How often to send:** Only once per event-instance in a record
-    * **Email To:** `[email]`
-    * **Email Subject:** Your survey invitation subject
-    * **Alert message:** Include the survey link: `[ema_arm_1][survey-url:ema][current-instance]`
+- Go to **Alerts & Notifications**
+- Click **Add New Alert**
+- Configure the Alert:
+    - **Alert title:** Something like "Send EMA Survey"
+    - **Trigger alert when:** `(datediff("now", [ema_arm_1][expires_at][current-instance], "s", true) > 0)`
+        - The `[current-instance]` piping is **critical** — without it, the Alert will evaluate against all instances and send far too many notifications
+        - The logic checks if "now" is before `expires_at`. If the alert is delayed for any reason (REDCap scheduler down, blank email field, bug in logic), expired surveys won't be sent when the problem is fixed.
+    - **Ensure logic is still true before sending:** Check this box
+    - **When to send the alert:** At the time specified by a date/time field
+        - Field: `deliver_at`
+    - **How often to send:** Only once per event-instance in a record
+    - **Email To:** `[email]`
+    - **Email Subject:** Your survey invitation subject
+    - **Alert message:** Include the survey link: `[ema_arm_1][survey-url:ema][current-instance]`
 
 ::: {.callout-warning}
 The `[current-instance]` piping is essential in both the trigger logic and the survey URL. Without it, the Alert will not work correctly.
@@ -140,20 +140,20 @@ The `[current-instance]` piping is essential in both the trigger logic and the s
 
 If you want to send reminder notifications for incomplete surveys:
 
-* Modify the Alert trigger logic to include a check for whether the survey was started:
-    * `(datediff("now", [ema_arm_1][expires_at][current-instance], "s", true) > 0) and ([ema_arm_1][started_at][current-instance] = "")`
-* This ensures reminders are only sent if the survey hasn't been started yet
+- Modify the Alert trigger logic to include a check for whether the survey was started:
+    - `(datediff("now", [ema_arm_1][expires_at][current-instance], "s", true) > 0) and ([ema_arm_1][started_at][current-instance] = "")`
+- This ensures reminders are only sent if the survey hasn't been started yet
 
 ### (Optional) Implement Survey Expiration
 
 To hide survey questions after the expiration time:
 
-* On the `ema` instrument, add a calculated field to check if the survey has expired:
-    * Field Type: Calculated Field
-    * Variable Name: `is_expired`
-    * Calculation: `datediff([started_at], [expires_at], "s", true) > 0`
-* Use branching logic on your data collection fields to hide them when `[is_expired] = 1`
-* Add a Descriptive Text field (or use a section header) with branching logic `[is_expired] = 1` that displays an expiration message
+- On the `ema` instrument, add a calculated field to check if the survey has expired:
+    - Field Type: Calculated Field
+    - Variable Name: `is_expired`
+    - Calculation: `datediff([started_at], [expires_at], "s", true) > 0`
+- Use branching logic on your data collection fields to hide them when `[is_expired] = 1`
+- Add a Descriptive Text field (or use a section header) with branching logic `[is_expired] = 1` that displays an expiration message
 
 ::: {.callout-note}
 Multi-page surveys and section headings work well for creating a clean expiration experience.
@@ -161,13 +161,13 @@ Multi-page surveys and section headings work well for creating a clean expiratio
 
 ## Notes
 
-* **Timing precision:** How often REDCap checks scheduled Alerts depends on your server settings. Our server checks every 5 minutes. **Send immediately** Alerts are generally not subject to this delay.
-* **Scheduled Alerts are sometimes absent:** Between the time an Alert is scheduled and when it's actually sent, it will not appear in the **Alerts Log** in either the past or future alerts.
-* **Checking message delivery:** The only way to check whether messages have been delivered is to use the **Notification Log** in **Alerts & Notifications**.
-* **Rescheduling:** You can regenerate schedules and re-import them to adjust survey times. A future recipe will cover rescheduling in detail.
-* **Email and SMS:** This approach works identically for both email and SMS (via Twilio, Mosio, or similar providers).
-* **Stopping messages:** To stop surveys for participants who withdraw, see [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
-* **Time zones:** Time zones will
+- **Timing precision:** How often REDCap checks scheduled Alerts depends on your server settings. Our server checks every 5 minutes. **Send immediately** Alerts are generally not subject to this delay.
+- **Scheduled Alerts are sometimes absent:** Between the time an Alert is scheduled and when it's actually sent, it will not appear in the **Alerts Log** in either the past or future alerts.
+- **Checking message delivery:** The only way to check whether messages have been delivered is to use the **Notification Log** in **Alerts & Notifications**.
+- **Rescheduling:** You can regenerate schedules and re-import them to adjust survey times. A future recipe will cover rescheduling in detail.
+- **Email and SMS:** This approach works identically for both email and SMS (via Twilio, Mosio, or similar providers).
+- **Stopping messages:** To stop surveys for participants who withdraw, see [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
+- **Time zones:** Time zones will
 
 ::: {.callout-caution title="Don't forget: Download those Notificaiton logs!"}
 
@@ -192,14 +192,14 @@ Once an Alert has been sent, changing its schedule to the future will not re-sch
 
 ### Alerts aren't sending
 
-* Verify the Alert is enabled and saved
-* Check that the trigger logic evaluates to true for the records you expect
-* Remember the 5-minute (or whatever your server uses) delay for scheduled Alerts
-* Check **Alerts & Notifications** > **View Alerts Log** to see what's been sent
+- Verify the Alert is enabled and saved
+- Check that the trigger logic evaluates to true for the records you expect
+- Remember the 5-minute (or whatever your server uses) delay for scheduled Alerts
+- Check **Alerts & Notifications** > **View Alerts Log** to see what's been sent
 
 ### Too many Alerts are sending
 
-* Verify you're using `[current-instance]` in the trigger logic
+- Verify you're using `[current-instance]` in the trigger logic
 
 ::: aside
 It can be helpful to schedule your alert timings at the same granularity as the server's scheduler.
@@ -210,15 +210,15 @@ During the time between when an Alert's scheduled time has passed and when it is
 
 ### Survey links aren't working
 
-* Verify you're using `[ema_arm_1][survey-url:ema][current-instance]` (adjust the event name for your project)
-* Check that the `ema` instrument is enabled as a survey
+- Verify you're using `[ema_arm_1][survey-url:ema][current-instance]` (adjust the event name for your project)
+- Check that the `ema` instrument is enabled as a survey
 
 ### Import fails
 
-* Verify your event name matches REDCap's unique event name (e.g., `ema_arm_1`)
-* Check that you've selected **Allow creation of new records?** in the Data Import Tool
+- Verify your event name matches REDCap's unique event name (e.g., `ema_arm_1`)
+- Check that you've selected **Allow creation of new records?** in the Data Import Tool
 
 ## Related Resources
 
-* [Back to EMA Overview](../)
-* [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
+- [Back to EMA Overview](../)
+- [Stopping Alerts and ASIs](../../stopping_alerts_asis/)
