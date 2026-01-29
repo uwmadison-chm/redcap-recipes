@@ -12,13 +12,13 @@ Each recipe should have:
    - `title`: Clear, action-oriented (e.g., "Stopping Alerts and ASIs")
    - `description`: One-sentence summary of what the recipe solves
    - `categories`: Relevant tags (lowercase, use existing categories when possible)
-2. **Overview section** with:
+1. **Overview section** with:
    - **Problem:** One short paragraph describing the challenge
    - **Solution:** One short paragraph describing the approach (not detailed steps)
-3. **Prerequisites section**: Bulleted list of what must exist before starting
-4. **Steps section**: List with clear, actionable instructions. No numbers.
-5. **Notes section** (optional): Important behaviors, caveats, or warnings
-6. (Optionally) **Troubleshooting section:** List common troubleshooting actions
+1. **Prerequisites section**: Bulleted list of what must exist before starting
+1. **Steps section**: List with clear, actionable instructions. No numbers.
+1. **Notes section** (optional): Important behaviors, caveats, or warnings
+1. (Optionally) **Troubleshooting section:** List common troubleshooting actions
 
 ## Writing Style
 
@@ -36,7 +36,7 @@ Each recipe should have:
 
 **Lists:**
 - Nest bullets/sub-bullets with 4 spaces
-- Use `*` for unordered lists
+- Use `-` for unordered lists
 - Use `1.` for all numbered items (Markdown auto-numbers)
 - Only use numbered lists when you are enumerating steps -- if it's "do this, here are reasons" you probably want bullets
 
@@ -60,6 +60,11 @@ Each recipe should have:
 - Spell out common REDCap terms once with the abbreviation in parentheses, then use the abbreviation throughout the rest of the document
 - Example: "Automated Survey Invitation (ASI)" in the overview, then "ASI" in all subsequent sections
 - Assume readers are familiar with standard REDCap abbreviations
+
+### Listing field definitions
+- Only list the parts of the field definition that are required to make a functional example
+- In most cases, do not list Field Label or Field Note, or indicate blank Minimum or Maximum values
+- Counterexamples might be when illustrating Field Embedding or piping to make a clean dashboard
 
 ### Referring to field types
 Use REDCap terminiology: "A Yes/No field" not "a checkbox" or "a yes/no field." "a @CALCTEXT field," not "a calculated text field."
