@@ -36,7 +36,7 @@ Each recipe should have:
 
 **Lists:**
 - Nest bullets/sub-bullets with 4 spaces
-- Use `-` for unordered lists
+- Use `-` for unordered lists (* is used for bold and italics in Markdown)
 - Use `1.` for all numbered items (Markdown auto-numbers)
 - Only use numbered lists when you are enumerating steps -- if it's "do this, here are reasons" you probably want bullets
 
