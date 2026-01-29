@@ -23,16 +23,18 @@ website:
   sidebar:
     style: "docked"
     background: light
+    collapse-level: 99
     contents:
       - text: "Home"
         href: index.qmd
       - section: "Recipes"
+        href: recipes/index.qmd
         contents:
-          - recipes/index.qmd
           - recipes/stopping_alerts_asis/index.qmd
+          - recipes/time_zones/index.qmd
           - section: "Ecological Momentary Assessment"
+            href: recipes/ema/index.qmd
             contents:
-              - recipes/ema/index.qmd
               - recipes/ema/fixed_schedule/index.qmd
               - recipes/ema/random_automatic/index.qmd
               - recipes/ema/random_automatic/builder/index.qmd

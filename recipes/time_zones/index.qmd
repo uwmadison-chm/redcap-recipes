@@ -1,0 +1,228 @@
+---
+title: "Handling Time Zones in REDCap"
+description: "A strategy for accounting for participant time zones when scheduling surveys and calculating dates"
+date: "2026-01-29"
+categories: [scheduling, time-zones, calculated-fields, asi]
+---
+
+## Overview
+
+**Problem:** You need to schedule surveys or calculate dates for participants across different US time zones, but REDCap uses the server's local time for all operations.
+
+**Solution:** Establish a baseline timestamp adjusted for each participant's time zone, then calculate all other dates relative to that baseline.
+
+## When to Use This Approach
+
+
+This approach works well when:
+
+- Participants are in different US time zones
+- You can collect time zone information before scheduled events begin
+- You don't need to account for Daylight Saving Time (DST) transitions
+- You know your server's time zone
+
+## Limitations
+
+::: {.callout-warning title="Daylight saving time not supported"}
+This strategy does not account for DST changes. As of 2026, this primarily affects Arizona and Hawaii, which don't observe DST. For participants in those states, the offset will be correct most of the year but will be off by one hour during DST transitions.
+:::
+
+::: {.aside}
+##### Need to handle DST?
+
+If you need to handle daylight saving transitions correctly, you'll probably need to calculate timestamps outside of REDCap and import them with the Data Import Tool or API.
+:::
+
+
+## How It Works
+
+REDCap triggers all time-based events (ASIs, Alerts, etc) in the **server's local time zone**. To schedule events at appropriate times for participants:
+
+1. **Detect the participant's time zone offset** by comparing `@NOW` (participant's browser time) with `@NOW-SERVER`
+1. **Let participants confirm their time zone** (the auto-detected offset is just a guess)
+1. **Create a baseline timestamp** adjusted for the participant's time zone
+1. **Calculate all future dates** relative to this baseline
+
+### Understanding Time Zone Offsets
+
+If your server is in America/Chicago (Central Time):
+
+| Time Zone | Offset from Server (minutes) |
+|-----------|-------------------------------|
+| Eastern   | -60 minutes                   |
+| Central   | 0 minutes                     |
+| Mountain  | +60 minutes                   |
+| Pacific   | +120 minutes                  |
+| Alaska    | +180 minutes                  |
+| Hawaii    | +240 minutes                  |
+
+::: {.callout-note}
+If your server is in a different time zone, you'll need to adjust these offsets accordingly.
+:::
+
+## Steps
+
+### Detect the Time Zone Offset
+
+Create fields to capture server time and participant time:
+
+- `today_server`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D)
+    - Variable Name: `today_server`
+    - Action Tags: `@TODAY-SERVER`
+- `now_server`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M)
+    - Variable Name: `now_server`
+    - Action Tags: `@NOW-SERVER`
+- `now`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M)
+    - Variable Name: `now`
+    - Action Tags: `@NOW`
+
+Calculate the difference between participant and server time:
+
+- `calc_tz_offset_min`:
+    - Field Type: Calculated Field
+    - Variable Name: `calc_tz_offset_min`
+    - Calculation: `round(datediff([now], [now_server], 'm', true), 0)`
+
+::: {.callout-tip title="For testing, put your calculation in the field label"}
+Including the calculation in the field label makes it easier to understand what the field does when reviewing your data dictionary.
+
+In production, you can either remove that or hide the whole field with `@HIDDEN-SURVEY`.
+:::
+
+::: {.callout-tip title="Rounding the `datediff()`"}
+Using `round(..., 0)` on the `datediff()` calculation means that even if your `[now]` and `[now_server]` differ slightly you'll still get a proper difference.
+:::
+
+### Let Participants Confirm Their Time Zone
+
+Put the time zone confirmation field in a **separate section** from the auto-detection fields. This ensures the calculated offset is saved before it's used as the default. In a full project, you could also put them in different instruments.
+
+- Add a section header or descriptive text field explaining the time zone selection
+- `tz_offset_min`:
+    - Field Type: Multiple Choice, Single Answer
+    - Variable Name: `tz_offset_min`
+    - Choices: `-60, Eastern | 0, Central | 60, Mountain | 120, Pacific | 180, Alaska | 240, Hawaii | 300`
+    - Required Field: Yes
+    - Action Tags: `@DEFAULT='[calc_tz_offset_min]'`
+
+The `@DEFAULT` action tag pre-fills the field with the auto-detected offset, which participants can adjust if needed.
+
+### Create the Baseline Timestamp
+
+Create a timestamp for "midnight on the day after enrollment" in the participant's time zone:
+
+- `baseline_timestamp`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M)
+    - Variable Name: `baseline_timestamp`
+    - Action Tags: `@CALCDATE([today_server], 1440 + [tz_offset_min], 'm')`
+
+::: {.aside}
+This sets the baseline to midnight (start of day) on the day after enrollment. Using `today_server` is correct because the server's time is used in scheduling.
+:::
+
+### Calculate Future Survey Times
+
+Define your survey schedule using configuration fields:
+
+- `days_to_t2`:
+    - Field Type: Text Box
+    - Validation: Integer
+    - Variable Name: `days_to_t2`
+    - Action Tags: `@DEFAULT='7'`
+- `survey_min_from_midnight`:
+    - Field Type: Text Box
+    - Validation: Integer
+    - Variable Name: `survey_min_from_midnight`
+    - Action Tags: `@DEFAULT='720'`
+
+Calculate the actual delivery time:
+
+- `invite_at_t2`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M)
+    - Variable Name: `invite_at_t2`
+    - Action Tags: `@CALCDATE([baseline_timestamp], (([days_to_t2] * 1440) + [survey_min_from_midnight]), 'm')`
+
+The calculation breaks down as:
+- `[days_to_t2] * 1440`: Convert days to minutes (1440 minutes per day)
+- `+ [survey_min_from_midnight]`: Add the time-of-day offset
+- Applied to `[baseline_timestamp]` using `@CALCDATE`
+
+::: {.callout-tip title="Prefer hours?"}
+If hours make more sense to you, feel free to use them instead! This recipe will still work just fine. I usually work with minutes because I like big numbers more than decimals.
+:::
+
+### Example: Daily Diary
+
+For a daily diary starting the day after enrollment at 9 AM participant-local time:
+
+- `diary_min_from_midnight`:
+    - Field Type: Text Box
+    - Validation: Integer
+    - Variable Name: `diary_min_from_midnight`
+    - Action Tags: `@DEFAULT='540'`
+- `diary_start_at`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M)
+    - Variable Name: `diary_start_at`
+    - Action Tags: `@CALCDATE([baseline_timestamp], (1440 + [diary_min_from_midnight]), 'm')`
+
+## Using Time Zone-Adjusted Timestamps with ASIs
+
+Once you have calculated delivery times (like `invite_at_t2` or `diary_start_at`), use them in Automated Survey Invitations:
+
+1. Go to **Designer** > **Survey Settings** for your instrument
+1. Enable **Automated Invitations**
+1. Set **When to send...** to "At the time specified by a date/time field"
+1. Select your calculated timestamp field (e.g., `diary_start_at`)
+1. Configure the rest of your ASI settings (conditions, message, etc.)
+
+The ASI will send at the calculated time, which will be the correct local time for each participant.
+
+## Notes
+
+- **@DEFAULT vs calculation in datediff:** Use `@DEFAULT` fields for `@NOW` and `@NOW-SERVER` rather than putting 'now' directly in a `datediff()` calculation. This ensures the values are captured at the right moment.
+- **Separate sections:** Put the auto-detection fields in one section and the time zone confirmation field in another section. This ensures the calculated offset is saved to the database before it's used as a default value.
+- **Hidden fields in production:** In the example data dictionary, all calculated fields are visible on surveys for demonstration purposes. In a real project, you would typically use `@HIDDEN-SURVEY` to hide technical fields from participants.
+- **Time zone updates:** If a participant moves to a different time zone mid-study, you'll need a strategy to update their `tz_offset_min` and potentially recalculate future survey times.
+- **Multi-day calculations:** For surveys multiple days out, multiply the number of days by 1440 (minutes per day) and add the time-of-day offset in minutes from midnight.
+- **Server time zone matters:** Know your REDCap server's time zone! All offsets are relative to it. You can verify by comparing `@NOW-SERVER` with your local server time.
+
+## Download Complete Example
+
+You can download a complete working example:
+
+- [Data Dictionary](assets/data_dictionary.csv)
+
+## Troubleshooting
+
+### Auto-detected time zone is wrong
+
+- Check that the participant's browser time is set correctly
+- Confirm your server's time zone and adjust offset values accordingly
+- Remember this is just a default—participants can manually select the correct zone
+
+### Baseline timestamp is incorrect
+
+- Ensure that `tz_offset_min` has a value before `baseline_timestamp` calculates
+- Check that the section separation is working (time zone field must be saved first)
+- Ensure `today_server` is being populated correctly
+
+### ASIs are sending at wrong times
+
+- Verify the calculated timestamp fields show the correct times when you view records
+- Check that your offset values match your server's time zone
+- Remember that REDCap's scheduled message queue may have a delay (often 5 minutes)
+- During DST transitions, times may be off by one hour
+
+## Related Resources
+
+- [EMA: Fixed Schedule](../ema/fixed_schedule/) - Using ASIs for scheduled surveys
+- [Stopping Alerts and ASIs](../stopping_alerts_asis/) - Managing survey delivery
