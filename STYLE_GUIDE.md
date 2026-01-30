@@ -36,17 +36,17 @@ Each recipe should have:
 
 **Lists:**
 - Nest bullets/sub-bullets with 4 spaces
-- Use `-` for unordered lists (* is used for bold and italics in Markdown)
+- Use `-` for unordered lists -- reserve * for bold.
 - Use `1.` for all numbered items (Markdown auto-numbers)
 - Only use numbered lists when you are enumerating steps -- if it's "do this, here are reasons" you probably want bullets
 
 **Emphasis:**
 - Use **bold** for UI elements and emphasis
-- Use _italics_ sparingly, mainly for subtle emphasis
-- Use backticks for form/field names and calculations, not emphasis
+- Use _italics_ sparingly, mainly for subtle emphasis. Do not use asterisks for italics.
+- Use backticks for form/field names and calculations
 
 **Warnings and traps:**
-- Use a `::: {.callout-warning}` block.
+- Use a `::: {.callout-warning}` block. Add the `title` attribute when appropriate.
 
 ## Common Patterns
 
