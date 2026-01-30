@@ -15,7 +15,7 @@ Each recipe should have:
 1. **Overview section** with:
    - **Problem:** One short paragraph describing the challenge
    - **Solution:** One short paragraph describing the approach (not detailed steps)
-1. **Prerequisites section**: Bulleted list of what must exist before starting
+1. (Optionally) **Prerequisites section**: Bulleted list of what must exist before starting
 1. **Steps section**: List with clear, actionable instructions. No numbers.
 1. **Notes section** (optional): Important behaviors, caveats, or warnings
 1. (Optionally) **Troubleshooting section:** List common troubleshooting actions
