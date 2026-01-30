@@ -1,5 +1,5 @@
 ---
-title: "Handling Time Zones in REDCap"
+title: "Time Zones for Surveys and Alerts"
 description: "A strategy for accounting for participant time zones when scheduling surveys and calculating dates"
 date: "2026-01-29"
 categories: [scheduling, time-zones, calculated-fields, asi]
@@ -212,7 +212,6 @@ You can download a complete working example:
 ### Baseline timestamp is incorrect
 
 - Ensure that `tz_offset_min` has a value before `baseline_timestamp` calculates
-- Check that the section separation is working (time zone field must be saved first)
 - Ensure `today_server` is being populated correctly
 
 ### ASIs are sending at wrong times
