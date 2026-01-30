@@ -31,6 +31,7 @@ website:
         href: recipes/index.qmd
         contents:
           - recipes/stopping_alerts_asis/index.qmd
+          - recipes/survey_timing/index.qmd
           - recipes/time_zones/index.qmd
           - section: "Ecological Momentary Assessment"
             href: recipes/ema/index.qmd

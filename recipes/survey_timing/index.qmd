@@ -1,0 +1,80 @@
+---
+title: "Tracking Survey Start, Completion, and Duration"
+description: "Capture survey timing data into exportable fields for quality checks and analysis"
+date: "2026-01-30"
+categories: [surveys, calculated-fields, data-quality]
+---
+
+## Overview
+
+**Problem:** Survey timing data—when a participant started, finished, and how long they took—is valuable for data quality checks (e.g., detecting bots or speeders) and analysis, but these values are only available in smart variables (`[survey-time-started]`, `[survey-time-completed]`, `[survey-duration-completed]`) that don't appear in data exports.
+
+**Solution:** Use `@CALCTEXT` fields to capture survey timing smart variables into regular fields that export with your data.
+
+## Approaches
+
+There are two ways to implement this:
+
+1. **Add timing fields to each survey:** Fields go at the end of the instrument they track
+1. **Create a single timing form:** One instrument contains timing fields for all surveys
+
+This recipe recommends the single timing form because:
+
+- It doesn't clutter your surveys with metadata fields
+- You can't add fields to PROMIS or other auto-scored/adaptive surveys, so you'd need both approaches anyway
+- Participants can't accidentally see these fields if they return to a survey
+
+The downside is that having calculations run from a different instrument can feel mysterious.
+
+## Steps
+
+### Create the timing fields
+
+For each survey you want to track, create three fields. In this example, the survey is named `daily_diary`:
+
+- `daily_diary_started_at`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M:S)
+    - Action Tags: `@CALCTEXT([survey-time-started:daily_diary:value])`
+- `daily_diary_completed_at`:
+    - Field Type: Text Box
+    - Validation: Datetime (Y-M-D H:M:S)
+    - Action Tags: `@CALCTEXT([survey-time-completed:daily_diary:value])`
+- `daily_diary_duration`:
+    - Field Type: Text Box
+    - Validation: Integer
+    - Action Tags: `@CALCTEXT([survey-duration-completed:daily_diary])`
+
+::: {.callout-tip title="Duration is in seconds"}
+The `[survey-duration-completed]` smart variable returns the duration in seconds. If you want a different unit, you can append `:{unit}` where `unit` is `y` `M` `d` `h` `m` or `s`.
+:::
+
+### If using a separate timing form
+
+If you're putting timing fields on a separate form:
+
+- Create a form (e.g., `survey_timing`) to hold all your timing fields
+- Go to **Project Setup** > **Designate Instruments for My Events**
+- Add your timing form to every event that contains surveys you want to track
+
+### For repeating surveys
+
+If you have repeating surveys (using **Repeat Entire Event** or **Repeat Instrument**):
+
+- If using **Repeat Entire Event**, put the timing fields on a form in the same event
+- If using **Repeat Instrument**, you must put the timing fields on the survey itself—a separate form won't have matching instances
+
+## Notes
+
+- **Surveys only:** These calculations only run when data is saved through the survey interface. If staff complete the instrument through the data entry form, the timing fields will remain blank.
+- **When calculations run:** The `@CALCTEXT` calculations execute _when survey data is saved,_ which captures the timing values into your regular data fields. You do not need to save the timing form for the values to update.
+- **Form renaming:** If you rename a survey, remember to update both the field names and the `@CALCTEXT` calculations.
+- **Performance:** Unlike using smart variables directly in reports or dashboards (which incurs a performance penalty because timing data is stored separately), these exported fields perform normally in all REDCap features.
+
+## Troubleshooting
+
+### Timing fields are blank
+
+- Verify the instrument was completed as a survey, not through the data entry form
+- Check that the form name in the smart variable matches the actual form name exactly
+- Ensure the timing form is designated for the correct event
