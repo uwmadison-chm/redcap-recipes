@@ -30,6 +30,7 @@ website:
       - section: "Recipes"
         href: recipes/index.qmd
         contents:
+          - recipes/sms_delivery_confirmation/index.qmd
           - recipes/stopping_alerts_asis/index.qmd
           - section: "Tracking Survey Start, End, and Duration"
             href: recipes/survey_timing/index.qmd

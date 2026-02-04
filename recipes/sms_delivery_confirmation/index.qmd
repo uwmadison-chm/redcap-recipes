@@ -1,0 +1,117 @@
+---
+title: "Confirming SMS Delivery in Realtime"
+description: "Verify participants can receive and act on SMS messages during screening"
+date: "2026-02-04"
+categories: [surveys, sms, screening]
+---
+
+## Overview
+
+**Problem:** During screening, you want to verify that participants can receive SMS messages and click survey links before they continue with your study. You also want them to be able to continue the main survey flow on their original device (likely a computer) after confirming SMS works on their phone.
+
+**Solution:** Create a survey flow where participants pause on a "waiting" screen, receive an SMS with a link to a separate verification survey, complete it on their phone, then return to their original device and click a button that refreshes the page—revealing a "continue" button once the SMS verification is complete.
+
+## Prerequisites
+
+- A REDCap project with SMS integration configured (Twilio, Mosio, etc.)
+
+## How it works
+
+The flow uses three surveys:
+
+1. **SMS Setup Part 1** - Collects phone number, auto-continues to **SMS Setup Part 2**
+1. **SMS Check** - Sent via SMS, completed on phone (not part of auto-continue chain)
+1. **SMS Setup Part 2** - A "waiting room" that shows different content based on whether **SMS Check** is complete
+
+The key trick is that **SMS Setup Part 2** uses branching logic to show either "waiting for you to complete the SMS survey" or "success, continue" messages. When participants click "I've done it!" it reloads the same page, and if they've completed **SMS Check**, they now see the continue button.
+
+## Steps
+
+### Create the phone collection survey
+
+Create `sms_setup_part_1` with:
+
+- Instructions explaining the SMS verification process (optionally, instructions to text START to your study number and save your number to contacts)
+- `sms_phone`:
+    - Field Type: Text Box
+    - Validation: Phone
+    - Variable Name: `sms_phone`
+
+Configure **Survey Settings** to auto-continue to `sms_setup_part_2`.
+
+### Create the SMS verification survey
+
+Create `sms_check` as a separate survey (not in the auto-continue chain):
+
+- A simple question like "Did you have any trouble getting here?"
+    - Include a "Yes" option with a follow-up text box for help requests
+- The question content doesn't matter much—having _something_ encourages participants to submit rather than just opening the link
+
+Set up an Automated Survey Invitation (ASI) to send this survey via SMS to `[sms_phone]` when `sms_setup_part_1` is complete.
+
+### Create the waiting room survey
+
+Create `sms_setup_part_2` with special settings:
+
+- In **Survey Settings**, set **Show or hide the Submit buttons** to **Always display the Submit buttons**
+- This survey should _not_ auto-continue to anything
+
+Add two Descriptive Text fields with inverse branching logic:
+
+- `sms_waiting_msg`:
+    - Field Type: Descriptive Text
+    - Variable Name: `sms_waiting_msg`
+    - Field Label (see below)
+    - Branching Logic: `[sms_check_complete] <> '2'`
+
+```html
+<p>You should receive a text message shortly. Click the link in the
+message and complete the short survey on your phone.</p>
+
+<p>When you're done, click the button below to continue.</p>
+
+<p><a class="jqbutton wrap ui-button ui-corner-all ui-widget"
+style="text-decoration: none; color: #800000; font-weight: bold;
+border-radius: 3px;" href="[survey-url:sms_setup_part_2]">I've done
+it!</a></p>
+
+<p><em>Having trouble? Contact us at study@example.edu</em></p>
+```
+
+- `sms_success_msg`:
+    - Field Type: Descriptive Text
+    - Variable Name: `sms_success_msg`
+    - Field Label (see below)
+    - Branching Logic: `[sms_check_complete] = '2'`
+
+```html
+<p>Great! Your phone is all set up for the study.</p>
+
+<p><a class="jqbutton wrap ui-button ui-corner-all ui-widget"
+style="text-decoration: none; color: #800000; font-weight: bold;
+border-radius: 3px;" href="[survey-url:next_survey]">Continue &gt;&gt;</a></p>
+```
+
+Replace `next_survey` with whatever survey should come next in your flow.
+
+## Notes
+
+- **Why links styled as buttons?** Using `<a>` tags styled like REDCap's survey buttons is intentional. Participants are already trained to click these controls to progress through surveys, so it provides a familiar experience. While links-as-buttons is generally discouraged in web design, it works well here.
+- **The "I've done it!" button** simply reloads the current page. If the participant has completed `sms_check`, the branching logic now shows the success message instead of the waiting message.
+- **Form status check:** `[sms_check_complete] = '2'` checks if the form status is "Complete." You can also use `[sms_check_timestamp] <> ''` to check if the survey was submitted.
+- **Include a help contact:** In the waiting message, provide an email address or link to a help form so participants can reach you if SMS isn't working.
+
+## Troubleshooting
+
+### Participant is stuck on the waiting screen
+
+- Verify the ASI is configured correctly and has fired (check **Survey Invitation Log** or **Email & SMS Logging**)
+- Confirm the phone number is correct in `sms_phone`
+- Check that your SMS provider is properly configured
+- Have the participant check their spam/blocked messages
+
+### Continue button doesn't appear after completing **SMS Check**
+
+- Ensure the branching logic references the correct form name
+- Verify `sms_check` was actually submitted (not just opened)
+- The participant may need to click "I've done it!" to refresh the page
