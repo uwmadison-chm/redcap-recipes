@@ -10,7 +10,7 @@ format:
       - assets/*
 include-in-header:
   - text: |
-      <script src="assets/jszip.min.js"></script>
+      <script src="/assets/js/jszip.min.js"></script>
 ---
 
 ::: {.callout-warning title="This tool is experimental!"}
