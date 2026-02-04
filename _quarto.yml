@@ -40,8 +40,10 @@ website:
             href: recipes/ema/index.qmd
             contents:
               - recipes/ema/fixed_schedule/index.qmd
-              - recipes/ema/random_automatic/index.qmd
-              - recipes/ema/random_automatic/builder/index.qmd
+              - section: "Random Schedule (Automatic)"
+                href: recipes/ema/random_automatic/index.qmd
+                contents:
+                  - recipes/ema/random_automatic/builder/index.qmd
               - recipes/ema/random_flexible/index.qmd
 
   page-footer:
