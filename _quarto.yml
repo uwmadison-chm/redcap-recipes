@@ -9,7 +9,7 @@ website:
   title: "REDCap Recipes"
   description: "Practical guides for implementing specific REDCap features and workflows while avoiding pitfalls"
 
-  site-url: https://github.com/uwmadison-chm/redcap-recipes
+  site-url: https://uwmadison-chm.github.io/redcap-recipes
   repo-url: https://github.com/uwmadison-chm/redcap-recipes
   repo-actions: [edit, issue]
 
@@ -31,7 +31,10 @@ website:
         href: recipes/index.qmd
         contents:
           - recipes/stopping_alerts_asis/index.qmd
-          - recipes/survey_timing/index.qmd
+          - section: "Tracking Survey Start, End, and Duration"
+            href: recipes/survey_timing/index.qmd
+            contents:
+              - recipes/survey_timing/builder/index.qmd
           - recipes/time_zones/index.qmd
           - section: "Ecological Momentary Assessment"
             href: recipes/ema/index.qmd

@@ -1,2 +1,14 @@
 /* Custom CSS for REDCap Recipes */
-/* Add custom styles here as needed */
+
+/* Style file input buttons to look like primary buttons */
+.form-control::file-selector-button {
+  background-color: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary-border-subtle);
+  color: var(--bs-primary);
+}
+
+.form-control:hover:not(:disabled):not([readonly])::file-selector-button {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: white;
+}

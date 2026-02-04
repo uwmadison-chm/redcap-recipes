@@ -1,0 +1,58 @@
+---
+title: "Survey Timing Form Builder"
+description: "Generate an instrument for tracking survey timing fields"
+format:
+  html:
+    toc: true
+    toc-location: left
+    code-copy: false
+    resources:
+      - assets/*
+include-in-header:
+  - text: |
+      <script src="/assets/js/jszip.min.js"></script>
+---
+
+::: {.callout-note}
+This builder runs entirely in your browser. No data leaves your machine.
+:::
+
+## 1. Import Project
+
+Upload a REDCap project XML export to detect your surveys.
+
+<div class="mb-3">
+  <label for="xml-file" class="form-label">REDCap Project XML</label>
+  <input type="file" class="form-control" id="xml-file" accept=".xml">
+</div>
+
+<div id="project-info"></div>
+
+## 2. Configuration
+
+<div class="mb-3">
+  <label for="form-name" class="form-label">Timing form name</label>
+  <input type="text" class="form-control" id="form-name" value="survey_timing" placeholder="Form name for timing fields">
+  <div class="form-text">This will be the name of the new instrument containing your timing fields.</div>
+</div>
+
+## 3. Select Surveys
+
+<div id="survey-selection">
+  <p class="text-muted">Upload a project XML to see available surveys.</p>
+</div>
+
+## 4. Download
+
+<div id="download-section" style="display: none;">
+  <div id="download-buttons" class="mb-3"></div>
+
+  <p class="text-muted">Import this instrument via <strong>Designer</strong> > <strong>Upload instrument zip file</strong>. After importing, designate it for the events containing your surveys.</p>
+
+  <div id="preview-container"></div>
+</div>
+
+<script type="module">
+import { init } from './assets/timing-builder.js';
+init();
+</script>

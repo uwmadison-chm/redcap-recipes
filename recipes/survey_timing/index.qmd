@@ -28,6 +28,10 @@ The downside is that having calculations run from a different instrument can fee
 
 ## Steps
 
+::: {.callout-tip title="Use the builder"}
+The [Survey Timing Builder](builder/) can generate a data dictionary for you. Upload your project XML, select which surveys to track, and download a ready-to-import CSV.
+:::
+
 ### Create the timing fields
 
 For each survey you want to track, create three fields. In this example, the survey is named `daily_diary`:
