@@ -7,9 +7,9 @@ subtitle: "Practical designs for REDCap projects"
 
 Welcome to REDCap Recipes, a collection of practical guides and solutions for working with [REDCap](https://www.project-redcap.org/) (Research Electronic Data Capture).
 
-REDCap is a web application and database, mainly for running for research studies. It is extremely powerful. It is _not,_ however, simple to use and understand; study builders will find many similar-looking paths to do what they need to achieve goals. Those paths may ultimately lead to surprise pitfalls. This guide aims to give you a set of maps to let you avoid the worst time sinks.
+REDCap is a web application and database, mainly for running for research studies. It is extremely powerful. It is also _extremely complex_ and implementing projects can be very complicated. Study builders will find many similar paths that look like they lead to your goal. Those paths may ultimately lead to surprise pitfalls. This guide aims to give you a set of maps to let you avoid the worst time sinks.
 
-## What you'll find here
+## What to expect here
 
 This site contains **recipes** — focused, practical guides that address specific REDCap challenges. Each recipe presents a problem and offers steps to solve it. In some cases, recipes may contain XML files with example study implementations.
 
@@ -17,21 +17,23 @@ This site contains **recipes** — focused, practical guides that address specif
 This guide is _not,_ however, a general guide to running studies in REDCap.
 :::
 
-You should expect to adapt these recipes to your own studies. Your field names will likely not match the ones in the recipes, and that's okay.
+This guide focuses primarily on studies run online: web-based survey and staff workflows. REDCap is also very useful when managing in-person study visits; that is a less common use case for this guide's authors. (For example: We'll probably never talk about the Calendar, Schedule, or Data Resolution Workflow; they just don't come up for us.)
+
+You should expect to adapt these recipes to your own studies. Your instrument and field names will likely not match the ones in the recipes. That's okay.
 
 ## About 
 
-This guide was developed using a REDCap system at the University of Wisconsin-Madison, hosted by the School of Medicine and Public Health (SMPH). The authors are neither REDCap admins nor members of the REDCap consortium; our knowledge of REDCap's inner workings and implementation is limited to what is publicly available, with help and advice from the excellent SMPH crew.
+This guide was written by Nate Vack and Stuti Shrivistava at the Center for Healthy Minds at the University of Wisconsin-Madison.
 
-At the time of writing, the REDCap system we are using is version 16.0.6. It is mainly a stock installation; few (if any) recipes will rely on external modules. No guides will require admin rights on your REDCap system.
+The authors are using a REDCap system hosted at the University of Wisconsin-Madison by the excellent admins at the School of Medicine and Public Health (SMPH). The authors of this guide are neither REDCap admins nor party to the REDCap consortium; our knowledge of REDCap's inner workings and implementation is limited to what is publicly available or can be learned by experimentation.
+
+At the time of writing, the REDCap system we are using is version 16.0.6. It is mainly a stock installation; few (if any) of these recipes will require external modules. No guides will require admin rights on your REDCap system.
 
 You will need to have **Project Setup and Design** rights to your project. Some recipes will require other rights (**Alerts & Notifications**, **Data Import**, and so on.) We'll assume you already have necessary rights. Some recipes will only be practical for some studies through the use of the API, though the Data Import Tool will almost always be an alternative.
 
-This guide was written by Nate Vack and Stuti Shrivistava at the Center for Healthy Minds at the University of Wisconsin-Madison.
-
 ## Contributing
 
-Have a recipe to share? Found an error? Contributions are welcome! Visit our [GitHub repository](https://github.com/centerforhealthyminds/redcap-recipes) to contribute or report issues.
+Have a recipe to share? Found an error? Contributions are welcome! Visit our [GitHub repository](https://github.com/centerforhealthyminds/redcap-recipes) feel free to open an issue or start a discussion.
 
 ## Citations
 
